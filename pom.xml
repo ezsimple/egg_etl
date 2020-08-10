@@ -31,14 +31,14 @@
 			<artifactId>busyUtil</artifactId>
 			<version>1.0.0</version>
 			<scope>system</scope>
-			<systemPath>${basedir}/src/main/resources/lib/busyUtil.jar</systemPath>
+			<systemPath>${basedir}/src/main/webapp/WEB-INF/lib/busyUtil.jar</systemPath>
 		</dependency>
 		<dependency>
 			<groupId>com.oracle</groupId>
 			<artifactId>ojdbc7</artifactId>
 			<version>12.1.0.2</version>
 			<scope>system</scope>
-			<systemPath>${basedir}/src/main/resources/lib/ojdbc7-12.1.0.2.jar</systemPath>
+			<systemPath>${basedir}/src/main/webapp/WEB-INF/lib/ojdbc7-12.1.0.2.jar</systemPath>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework</groupId>

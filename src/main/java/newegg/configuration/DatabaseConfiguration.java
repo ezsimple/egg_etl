@@ -34,8 +34,8 @@ public class DatabaseConfiguration {
 	@Bean
 	public SqlSessionFactory sqlSessionFactory(DataSource dataSource, ApplicationContext applicationContext) throws Exception {
 		final String DbType = env.getProperty("Globals.DbType");
-		Resource configLocation = new PathMatchingResourcePatternResolver().getResource(env.getProperty("mybatis.config-location"));
-		Resource[] mapperLocations = new PathMatchingResourcePatternResolver().getResources(env.getProperty("mybatis.mapper-locations"));
+		Resource configLocation = applicationContext.getResource(env.getProperty("mybatis.config-location"));
+		Resource[] mapperLocations = applicationContext.getResources(env.getProperty("mybatis.mapper-locations"));
 		SqlSessionFactoryBean sqlSessionFactoryBean = new SqlSessionFactoryBean();
 		sqlSessionFactoryBean.setDataSource(dataSource);
 		sqlSessionFactoryBean.setConfigLocation(configLocation);

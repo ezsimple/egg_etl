@@ -16,7 +16,7 @@
   <typeAliases>
 
     <!-- Common -->
-    <typeAlias alias="QueryMap" type="ezfarm.utils.QueryMap"/>
+    <typeAlias type="newegg.utils.QueryMap" alias="QueryMap" /> 
 
   </typeAliases>
 

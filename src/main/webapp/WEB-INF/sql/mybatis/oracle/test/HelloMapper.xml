@@ -6,7 +6,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 <mapper namespace="newegg.hello.test">
     <select id="selectFromDual" parameterType="QueryMap" resultType="QueryMap" fetchSize="1000">
     <![CDATA[ 
-    	SELECT 'EGGPLAN' AS HELLO FROM DUAL
+    	SELECT 'EGGPLAN ETL' AS HELLO FROM DUAL
     ]]>
     </select>
 </mapper>

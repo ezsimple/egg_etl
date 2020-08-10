@@ -1,5 +1,7 @@
 package newegg.controller;
 
+import java.util.Map;
+
 import javax.annotation.Resource;
 
 import org.springframework.context.ApplicationContext;
@@ -22,7 +24,7 @@ class HelloController {
 	
 	@ResponseBody
 	@RequestMapping(value= {"/", "/hello.do"})
-	public String hello(ModelMap model, CommandMap commandMap) throws Exception {
+	public Object hello(ModelMap model, CommandMap commandMap) throws Exception {
 		
 		commandMap.debugParams();
 
@@ -33,9 +35,11 @@ class HelloController {
 		String nsId = "selectFromDual";
 		QueryMap queryMap = new QueryMap();
 
-		QueryFactory.execute(ns, nsId, queryMap);
+		Object result = QueryFactory.execute(ns, nsId, queryMap);
+		result = QueryFactory.getResult(ns, nsId, result);
+		Map<String, Object> rts = QueryFactory.toMap(result);
 		
-		return message;
+		return rts;
 	}
 	
 }

@@ -1,0 +1,7 @@
+// Snap
+$SH_ROOT/bin/ezfarmsql_cl.sh $SH_ROOT/sql/curl/etl_snap_1st_main_for_curl.sql | sed -e  's/||/\n/g' | tr -d '\t' > $DATA_PATH/etl_snap_1st_main_for_curl_$RUN_DATE.json
+$SH_ROOT/bin/ezfarmsql_cl.sh $SH_ROOT/sql/curl/etl_snap_2nd_egg_transfer_for_curl.sql | sed -e  's/||/\n/g' | tr -d '\t' > $DATA_PATH/etl_snap_2nd_egg_transfer_for_curl_$RUN_DATE.json
+$SH_ROOT/bin/ezfarmsql_cl.sh $SH_ROOT/sql/curl/etl_snap_3rd_hatchery_recv.sql | sed -e  's/||/\n/g' | tr -d '\t' > $DATA_PATH/etl_snap_3rd_hatchery_recv_$RUN_DATE.json
+$SH_ROOT/bin/ezfarmsql_cl.sh $SH_ROOT/sql/curl/etl_snap_4th_grading.sql | sed -e  's/||/\n/g' | tr -d '\t' > $DATA_PATH/etl_snap_4th_grading_$RUN_DATE.json
+$SH_ROOT/bin/ezfarmsql_cl.sh $SH_ROOT/sql/curl/etl_snap_5th_setting.sql | sed -e  's/||/\n/g' | tr -d '\t' > $DATA_PATH/etl_snap_5th_setting_$RUN_DATE.json
+$SH_ROOT/bin/ezfarmsql_cl.sh $SH_ROOT/sql/curl/etl_snap_6th_hatching.sql | sed -e  's/||/\n/g' | tr -d '\t' > $DATA_PATH/etl_snap_6th_hatching_$RUN_DATE.json

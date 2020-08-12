@@ -1,0 +1,989 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="newegg.breeding.std1">
+    <select id="etlQuery" parameterType="QueryMap" resultType="QueryMap" >
+    <![CDATA[ 
+SELECT
+--    COUNT(*) OVER() COUNT,
+--    TO_CHAR(BR.WORK_DATE, 'YYYY-MM-DD'), BR.FARM_CODE, BR.FLOCK_ID, BR.HH_ID,
+   JSON_OBJECT(
+     'update' VALUE JSON_OBJECT(
+        '_index' VALUE 'cj-chickenfarm-ps-idx'
+       ,'_id' VALUE TO_CHAR(BR.WORK_DATE, 'YYYY-MM-DD') || 'breeding' || BR.FARM_CODE || BR.FLOCK_ID || BR.HH_ID
+       ,'retry_on_conflict' VALUE 10
+     )
+   ) INDEX_META,
+   JSON_OBJECT(
+    'doc' VALUE JSON_OBJECT(
+        'doc_key' VALUE (
+            TO_CHAR(BR.WORK_DATE, 'YYYY-MM-DD') || 'breeding' || BR.FARM_CODE || BR.FLOCK_ID || BR.HH_ID
+        ) 
+        ,'std_sc_cum_list' VALUE(
+          SELECT 
+            JSON_ARRAYAGG(
+                JSON_OBJECT(
+                    'age' VALUE STD.AGE
+                    ,'value' VALUE STD.SC_CUM
+                    ,'on_day' VALUE CASE WHEN STD.AGE = BR.AGE_WEEK THEN 'true' ELSE 'false' END FORMAT JSON
+                    ,'age_week' VALUE BR.AGE_WEEK
+                    ABSENT ON NULL
+                ) ORDER BY STD.AGE
+            )
+          FROM TC_STANDARD_MAST STM
+            LEFT JOIN TC_STANDARD_DTL STD ON STM.STANDARD_ID = STD.STANDARD_ID
+          WHERE 
+            STM.ACTIVE_DATE IN (
+              SELECT MAX(STM_D.ACTIVE_DATE) FROM TC_STANDARD_MAST STM_D 
+                WHERE STM_D.ACTIVE_DATE <= BR.WORK_DATE
+                  GROUP BY STM_D.FARM_CLASS, STM_D.STRAIN_CODE, STM_D.BREEDING_TYPE
+            ) AND STM.COUNTRY_CODE = (SELECT FM.COUNTRY_CODE FROM TC_FARM_INFO FM WHERE FM.FARM_CODE = BR.FARM_CODE) 
+              AND STM.FARM_CLASS=FA.FARM_CLASS
+              AND STM.STRAIN_CODE=FL.STRAIN_CODE 
+              AND STM.BREEDING_TYPE = CASE WHEN FL.LAYING_SDATE > BR.WORK_DATE THEN 'G' ELSE 'L' END
+              AND STD.AGE <= 65 
+            GROUP BY STD.COUNTRY_CODE,STD.STANDARD_ID        
+        )
+       ABSENT  ON NULL 
+    ), 'doc_as_upsert' VALUE 'true' FORMAT JSON) cj_hatchery_json_info 
+FROM (       -- TP_BREED_LOG
+    SELECT BR.*
+    ,TRUNC(BR.AGE_DAY /7) + 1 AGE_WEEK
+    ,BR.WORK_DATE + (6 - MOD(BR.AGE_DAY, 7) ) AGE_WEEK_LAST_DAY
+    FROM TP_BREED_LOG BR
+  )BR LEFT JOIN TC_FARM_INFO FA ON FA.FARM_CODE = BR.FARM_CODE   -- TC_FARM_INFO
+--
+LEFT JOIN ( -- 작업일자 기준 암, 수 개체수 계산
+    SELECT CURR.WORK_DATE,CURR.FARM_CODE, CURR.FLOCK_ID, CURR.HH_ID
+        , CURR.FEMALE, CURR.MALE, CURR.FEMALE + CURR.MALE AS TOTAL
+    FROM (
+        SELECT
+            BRI.WORK_DATE,BRI.FARM_CODE, BRI.FLOCK_ID, BRI.HH_ID
+            ,HHI.CHICKIN_QTY_F + NVL(MOI.MOVE_IN_ACC_F, 0) - NVL(MOI.MOVE_OUT_ACC_F, 0) -
+            SUM(BRI.DEATH_QTY_F + BRI.CULLING_QTY_F) OVER(PARTITION BY BRI.FARM_CODE, BRI.FLOCK_ID, BRI.HH_ID ORDER BY BRI.WORK_DATE) FEMALE
+            ,HHI.CHICKIN_QTY_M + NVL(MOI.MOVE_IN_ACC_M, 0) - NVL(MOI.MOVE_OUT_ACC_M, 0) -
+            SUM(BRI.DEATH_QTY_M + BRI.CULLING_QTY_M) OVER(PARTITION BY BRI.FARM_CODE, BRI.FLOCK_ID, BRI.HH_ID ORDER BY BRI.WORK_DATE) MALE
+        FROM TP_BREED_LOG BRI
+        LEFT JOIN TP_HH_CHICKIN HHI ON HHI.FARM_CODE = BRI.FARM_CODE AND HHI.FLOCK_ID = BRI.FLOCK_ID AND HHI.HH_ID = BRI.HH_ID
+        LEFT JOIN (  -- move_hist
+          SELECT
+            MO.MOVE_DATE,MO.FARM_CODE ,MO.FLOCK_ID, MO.HH_ID
+            ,SUM(MO.MOVE_IN_DS_F)  OVER(PARTITION BY MO.FARM_CODE ,MO.FLOCK_ID, MO.HH_ID ORDER BY MO.MOVE_DATE) MOVE_IN_ACC_F
+            ,SUM(MO.MOVE_OUT_DS_F) OVER(PARTITION BY MO.FARM_CODE ,MO.FLOCK_ID, MO.HH_ID ORDER BY MO.MOVE_DATE) MOVE_OUT_ACC_F
+            ,SUM(MO.MOVE_IN_DS_M)  OVER(PARTITION BY MO.FARM_CODE ,MO.FLOCK_ID, MO.HH_ID ORDER BY MO.MOVE_DATE) MOVE_IN_ACC_M
+            ,SUM(MO.MOVE_OUT_DS_M) OVER(PARTITION BY MO.FARM_CODE ,MO.FLOCK_ID, MO.HH_ID ORDER BY MO.MOVE_DATE) MOVE_OUT_ACC_M
+            FROM (
+              SELECT
+                MO.MOVE_DATE,MO.FARM_CODE ,MO.FLOCK_ID, MO.HH_ID
+               ,SUM(MO.MOVE_IN_F) MOVE_IN_DS_F, SUM(MO.MOVE_OUT_F) MOVE_OUT_DS_F, SUM(MO.MOVE_IN_M) MOVE_IN_DS_M, SUM(MO.MOVE_OUT_M) MOVE_OUT_DS_M
+              FROM (
+                  SELECT MOVE_DATE,FARM_CODE ,FLOCK_ID,HH_ID, SEQ_NO
+                      ,CASE WHEN MOVE_QTY_F >= 0 THEN MOVE_QTY_F ELSE 0 END MOVE_IN_F
+                      ,CASE WHEN MOVE_QTY_F < 0 THEN MOVE_QTY_F * -1 ELSE 0 END MOVE_OUT_F
+                      ,CASE WHEN MOVE_QTY_M >= 0 THEN MOVE_QTY_M ELSE 0 END MOVE_IN_M
+                      ,CASE WHEN MOVE_QTY_M < 0 THEN MOVE_QTY_M * -1 ELSE 0 END MOVE_OUT_M
+                      FROM TP_HH_MOVE_HIST
+                      ORDER BY MOVE_DATE, FARM_CODE, FLOCK_ID, HH_ID, SEQ_NO
+              ) MO
+                GROUP BY MO.MOVE_DATE, MO.FARM_CODE, MO.FLOCK_ID, MO.HH_ID
+                ORDER BY MO.MOVE_DATE, MO.FARM_CODE, MO.FLOCK_ID, MO.HH_ID
+          ) MO ORDER BY MO.MOVE_DATE, MO.FARM_CODE, MO.FLOCK_ID, MO.HH_ID
+        )  MOI ON MOI.MOVE_DATE = BRI.WORK_DATE
+                AND MOI.FARM_CODE = BRI.FARM_CODE AND MOI.FLOCK_ID = BRI.FLOCK_ID AND MOI.HH_ID = BRI.HH_ID
+    ) CURR
+) CURR ON BR.WORK_DATE = CURR.WORK_DATE AND BR.FARM_CODE = CURR.FARM_CODE
+    AND BR.FLOCK_ID = CURR.FLOCK_ID AND BR.HH_ID = CURR.HH_ID
+LEFT JOIN ( -- 종란 생산 시점 암 수 개체 수 계산
+    SELECT LAYING_POP.WORK_DATE,LAYING_POP.FARM_CODE, LAYING_POP.FLOCK_ID, LAYING_POP.HH_ID
+        , LAYING_POP.FEMALE, LAYING_POP.MALE, LAYING_POP.FEMALE + LAYING_POP.MALE AS TOTAL
+    FROM (
+        SELECT
+            BRI.WORK_DATE,BRI.FARM_CODE, BRI.FLOCK_ID, BRI.HH_ID
+            ,HHI.CHICKIN_QTY_F + NVL(MOI.MOVE_IN_ACC_F, 0) - NVL(MOI.MOVE_OUT_ACC_F, 0) -
+            SUM(BRI.DEATH_QTY_F + BRI.CULLING_QTY_F) OVER(PARTITION BY BRI.FARM_CODE, BRI.FLOCK_ID, BRI.HH_ID ORDER BY BRI.WORK_DATE) FEMALE
+            ,HHI.CHICKIN_QTY_M + NVL(MOI.MOVE_IN_ACC_M, 0) - NVL(MOI.MOVE_OUT_ACC_M, 0) -
+            SUM(BRI.DEATH_QTY_M + BRI.CULLING_QTY_M) OVER(PARTITION BY BRI.FARM_CODE, BRI.FLOCK_ID, BRI.HH_ID ORDER BY BRI.WORK_DATE) MALE
+        FROM TP_BREED_LOG BRI
+        LEFT JOIN TP_HH_CHICKIN HHI ON HHI.FARM_CODE = BRI.FARM_CODE AND HHI.FLOCK_ID = BRI.FLOCK_ID AND HHI.HH_ID = BRI.HH_ID
+        LEFT JOIN (  -- move_hist
+          SELECT
+            MO.MOVE_DATE,MO.FARM_CODE ,MO.FLOCK_ID, MO.HH_ID
+            ,SUM(MO.MOVE_IN_DS_F)  OVER(PARTITION BY MO.FARM_CODE ,MO.FLOCK_ID, MO.HH_ID ORDER BY MO.MOVE_DATE) MOVE_IN_ACC_F
+            ,SUM(MO.MOVE_OUT_DS_F) OVER(PARTITION BY MO.FARM_CODE ,MO.FLOCK_ID, MO.HH_ID ORDER BY MO.MOVE_DATE) MOVE_OUT_ACC_F
+            ,SUM(MO.MOVE_IN_DS_M)  OVER(PARTITION BY MO.FARM_CODE ,MO.FLOCK_ID, MO.HH_ID ORDER BY MO.MOVE_DATE) MOVE_IN_ACC_M
+            ,SUM(MO.MOVE_OUT_DS_M) OVER(PARTITION BY MO.FARM_CODE ,MO.FLOCK_ID, MO.HH_ID ORDER BY MO.MOVE_DATE) MOVE_OUT_ACC_M
+            FROM (
+              SELECT
+                MO.MOVE_DATE,MO.FARM_CODE ,MO.FLOCK_ID, MO.HH_ID
+               ,SUM(MO.MOVE_IN_F) MOVE_IN_DS_F, SUM(MO.MOVE_OUT_F) MOVE_OUT_DS_F, SUM(MO.MOVE_IN_M) MOVE_IN_DS_M, SUM(MO.MOVE_OUT_M) MOVE_OUT_DS_M
+              FROM (
+                  SELECT MOVE_DATE,FARM_CODE ,FLOCK_ID,HH_ID, SEQ_NO
+                      ,CASE WHEN MOVE_QTY_F >= 0 THEN MOVE_QTY_F ELSE 0 END MOVE_IN_F
+                      ,CASE WHEN MOVE_QTY_F < 0 THEN MOVE_QTY_F * -1 ELSE 0 END MOVE_OUT_F
+                      ,CASE WHEN MOVE_QTY_M >= 0 THEN MOVE_QTY_M ELSE 0 END MOVE_IN_M
+                      ,CASE WHEN MOVE_QTY_M < 0 THEN MOVE_QTY_M * -1 ELSE 0 END MOVE_OUT_M
+                      FROM TP_HH_MOVE_HIST
+                      ORDER BY MOVE_DATE, FARM_CODE, FLOCK_ID, HH_ID, SEQ_NO
+              ) MO
+                GROUP BY MO.MOVE_DATE, MO.FARM_CODE, MO.FLOCK_ID, MO.HH_ID
+                ORDER BY MO.MOVE_DATE, MO.FARM_CODE, MO.FLOCK_ID, MO.HH_ID
+          ) MO ORDER BY MO.MOVE_DATE, MO.FARM_CODE, MO.FLOCK_ID, MO.HH_ID
+        )  MOI ON MOI.MOVE_DATE = BRI.WORK_DATE
+                AND MOI.FARM_CODE = BRI.FARM_CODE AND MOI.FLOCK_ID = BRI.FLOCK_ID AND MOI.HH_ID = BRI.HH_ID
+    ) LAYING_POP
+    WHERE LAYING_POP.WORK_DATE = (SELECT LAYING_SDATE FROM TP_FLOCK_INFO FLI WHERE FLI.FARM_CODE = LAYING_POP.FARM_CODE AND FLI.FLOCK_ID =LAYING_POP.FLOCK_ID )
+) LAYING_POP
+    ON BR.FARM_CODE = LAYING_POP.FARM_CODE
+    AND BR.FLOCK_ID = LAYING_POP.FLOCK_ID AND BR.HH_ID = LAYING_POP.HH_ID
+LEFT JOIN TP_FLOCK_INFO FL
+    ON FL.FARM_CODE = BR.FARM_CODE AND FL.FLOCK_ID = BR.FLOCK_ID  -- TP_FLOCK_INFO
+-- flockin
+LEFT JOIN (          -- BREED_RECEIVE FLOCK_IN
+    SELECT
+       BRR.FARM_CODE
+      ,BRR.FLOCK_ID
+      ,SUM(BRR.FLOCK_IN_QTY_F) FLOCK_IN_T_F
+      ,SUM(BRR.FLOCK_IN_QTY_M) FLOCK_IN_T_M
+    FROM TP_BREED_RECV BRR
+    GROUP BY BRR.FARM_CODE, BRR.FLOCK_ID
+    ORDER BY BRR.FARM_CODE, BRR.FLOCK_ID
+) BRRS ON BRRS.FARM_CODE = BR.FARM_CODE AND BRRS.FLOCK_ID = BR.FLOCK_ID
+LEFT JOIN TP_HH_CHICKIN HH
+    ON HH.FARM_CODE = BR.FARM_CODE AND HH.FLOCK_ID = BR.FLOCK_ID AND HH.HH_ID = BR.HH_ID
+LEFT JOIN TC_BREED_HH_INFO BHH
+    ON HH.FARM_CODE = BHH.FARM_CODE AND HH.HH_ID = BHH.HH_ID
+-- end flockin
+-- move-hist
+LEFT JOIN (  -- move_hist
+    SELECT
+        MO.MOVE_DATE,MO.FARM_CODE ,MO.FLOCK_ID, MO.HH_ID, MO.MOVE_IN_DS_F, MO.MOVE_OUT_DS_F, MO.MOVE_IN_DS_M, MO.MOVE_OUT_DS_M, MO.REASON_HIST
+        ,SUM(MO.MOVE_IN_DS_F)  OVER(PARTITION BY FARM_CODE ,MO.FLOCK_ID, MO.HH_ID ORDER BY MO.MOVE_DATE) MOVE_IN_ACC_F
+        ,SUM(MO.MOVE_OUT_DS_F) OVER(PARTITION BY FARM_CODE ,MO.FLOCK_ID, MO.HH_ID ORDER BY MO.MOVE_DATE) MOVE_OUT_ACC_F
+        ,SUM(MO.MOVE_IN_DS_M)  OVER(PARTITION BY FARM_CODE ,MO.FLOCK_ID, MO.HH_ID ORDER BY MO.MOVE_DATE) MOVE_IN_ACC_M
+        ,SUM(MO.MOVE_OUT_DS_M) OVER(PARTITION BY FARM_CODE ,MO.FLOCK_ID, MO.HH_ID ORDER BY MO.MOVE_DATE) MOVE_OUT_ACC_M
+    FROM (
+        SELECT MO.MOVE_DATE,MO.FARM_CODE ,MO.FLOCK_ID, MO.HH_ID
+            ,SUM(MO.MOVE_IN_F) MOVE_IN_DS_F, SUM(MO.MOVE_OUT_F) MOVE_OUT_DS_F, SUM(MO.MOVE_IN_M) MOVE_IN_DS_M, SUM(MO.MOVE_OUT_M) MOVE_OUT_DS_M
+            ,JSON_OBJECT(
+                'move_date' VALUE TO_CHAR(MO.MOVE_DATE, 'YYYY-MM-DD')
+                ,'reason' VALUE (
+                    JSON_ARRAYAGG(
+                        JSON_OBJECT(
+                            'seq_no' VALUE MO.SEQ_NO
+                            ,'reason' VALUE MO.MOVE_REASON
+                            ABSENT ON NULL
+                        ) ORDER BY MO.SEQ_NO
+                    )
+                )
+                ABSENT ON NULL
+            ) REASON_HIST
+        FROM (
+            SELECT MOVE_DATE,FARM_CODE ,FLOCK_ID,HH_ID, SEQ_NO
+                ,CASE WHEN MOVE_QTY_F >= 0 THEN MOVE_QTY_F ELSE 0 END MOVE_IN_F
+                ,CASE WHEN MOVE_QTY_F < 0 THEN MOVE_QTY_F * -1 ELSE 0 END MOVE_OUT_F
+                ,CASE WHEN MOVE_QTY_M >= 0 THEN MOVE_QTY_M ELSE 0 END MOVE_IN_M
+                ,CASE WHEN MOVE_QTY_M < 0 THEN MOVE_QTY_M * -1 ELSE 0 END MOVE_OUT_M
+                ,MOVE_REASON
+            FROM TP_HH_MOVE_HIST
+            ORDER BY MOVE_DATE, FARM_CODE, FLOCK_ID, HH_ID, SEQ_NO
+        ) MO
+        GROUP BY MO.MOVE_DATE, MO.FARM_CODE, MO.FLOCK_ID, MO.HH_ID
+        ORDER BY MO.MOVE_DATE, MO.FARM_CODE, MO.FLOCK_ID, HH_ID
+--
+    ) MO ORDER BY MO.MOVE_DATE, MO.FARM_CODE, MO.FLOCK_ID, HH_ID
+-- end move_hist
+)  MO ON MO.MOVE_DATE = BR.WORK_DATE AND MO.FARM_CODE = BR.FARM_CODE AND MO.FLOCK_ID = BR.FLOCK_ID AND MO.HH_ID = BR.HH_ID
+--end move-hist
+LEFT JOIN (   -- FEED_INFO
+    SELECT FE.WORK_DATE FEED_DATE ,FE.FARM_CODE ,FE.FLOCK_ID ,FE.HH_ID
+        ,SUM(FE.USE_AMT_F)  TOTAL_USE_AMT_F    -- JDY KG UNIT
+        ,SUM(FE.USE_AMT_M)  TOTAL_USE_AMT_M    -- JDY KG UNIT
+        ,JSON_OBJECT(
+            'feed_date' VALUE TO_CHAR(FE.WORK_DATE, 'YYYY-MM-DD')
+            ,'feed_hist' VALUE (
+                JSON_ARRAYAGG(
+                    JSON_OBJECT(
+                        'female' VALUE JSON_OBJECT(
+                            'seq_no' VALUE FE.SEQ_NO
+                            ,'code' VALUE FE.FEED_CODE
+                            ,'name' VALUE MA.MATERIAL_NAME
+                            ,'using' VALUE MA.USING_CLASS
+                            ,'using_name' VALUE CD.CODE_STEXT
+                            ,'use_amount' VALUE FE.USE_AMT_F     -- KG UNIT
+                        )
+                        ,'male' VALUE JSON_OBJECT(
+                            'seq_no' VALUE FE.SEQ_NO
+                            ,'code' VALUE FE.FEED_CODE
+                            ,'name' VALUE MA.MATERIAL_NAME
+                            ,'using' VALUE MA.USING_CLASS
+                            ,'using_name' VALUE CD.CODE_STEXT
+                            ,'use_amount' VALUE FE.USE_AMT_M      -- KG UNIT
+                        )
+                    ) ORDER BY FE.SEQ_NO
+                )
+            )
+            ABSENT ON NULL
+        ) FEED_HIST
+    FROM TP_BREED_LOG_FEED FE
+    LEFT JOIN TC_MATERIAL_INFO MA ON FE.FEED_CODE = MA.MATERIAL_CODE
+    LEFT JOIN TC_FARM_INFO FA ON FE.FARM_CODE = FA.FARM_CODE
+    LEFT JOIN TC_CODE_DTL CD ON CD.COUNTRY_CODE = FA.COUNTRY_CODE AND CD.CODE_ID = 'EP22' AND CD.CODE_VALUE = MA.USING_CLASS
+    GROUP BY FE.WORK_DATE, FE.FARM_CODE, FE.FLOCK_ID, FE.HH_ID
+) FEH ON FEH.FEED_DATE = BR.WORK_DATE AND FEH.FARM_CODE = BR.FARM_CODE  AND FEH.FLOCK_ID = BR.FLOCK_ID AND FEH.HH_ID = BR.HH_ID
+LEFT JOIN (    -- TP_BREED_LOG_MED
+    SELECT
+        MED.WORK_DATE MED_DATE			                            -- 작업 일자 / Work Date
+        ,MED.FARM_CODE				                                -- 농장코드 / Farm Code국가(1) + 축종(1) + Type(1) + 지역(3) + Serial(3) 축종 : Code ID EP23 Type : Code ID EP24
+        ,MED.FLOCK_ID				                                -- 계군 ID/ Flock ID계군 입식시 자체 생성품종(2) + 년도(2) + 농장약어코드(4) + Serial(5)Flock ID 생성 Function : FN_NEW_FLOCK_ID(품종(2), 년도(2), 농장약어코드(4))
+        ,MED.HH_ID				                                    -- 계사ID / Hen House ID / hhcode
+        ,JSON_ARRAYAGG(
+            JSON_OBJECT(
+                'seq_no' VALUE MED.SEQ_NO
+                ,'code' VALUE MED.MEDICINE_CODE
+                ,'name' VALUE MA.MATERIAL_NAME
+                ,'using' VALUE MA.USING_CLASS
+                ,'using_name' VALUE CD.CODE_STEXT
+                ,'amount' VALUE MED.USE_AMT
+                ,'unit' VALUE MA.UNIT
+                NULL ON NULL
+            )
+        )  MEDI_HIST -- JSON_ARRAY
+    FROM TP_BREED_LOG_MED MED
+    LEFT JOIN TC_MATERIAL_INFO MA ON MED.MEDICINE_CODE = MA.MATERIAL_CODE
+    LEFT JOIN TC_CODE_DTL CD
+        ON CD.COUNTRY_CODE = (SELECT FM.COUNTRY_CODE FROM TC_FARM_INFO FM WHERE FM.FARM_CODE = MED.FARM_CODE) --'01'
+            AND CD.CODE_ID = 'EP22' AND CD.CODE_VALUE = MA.USING_CLASS
+    GROUP BY MED.WORK_DATE, MED.FARM_CODE, MED.FLOCK_ID, MED.HH_ID
+) MED ON MED.MED_DATE = BR.WORK_DATE AND MED.FARM_CODE = BR.FARM_CODE
+    AND MED.FLOCK_ID = BR.FLOCK_ID AND MED.HH_ID = BR.HH_ID
+LEFT JOIN (    -- VAC_HIST
+    SELECT  VAC.WORK_DATE	VAC_DATE			                                -- 작업 일자 / Work Date
+        ,VAC.FARM_CODE				                                -- 농장코드 / Farm Code국가(1) + 축종(1) + Type(1) + 지역(3) + Serial(3) 축종 : Code ID EP23 Type : Code ID EP24
+        ,VAC.FLOCK_ID				                                -- 계군 ID/ Flock ID계군 입식시 자체 생성품종(2) + 년도(2) + 농장약어코드(4) + Serial(5)Flock ID 생성 Function : FN_NEW_FLOCK_ID(품종(2), 년도(2), 농장약어코드(4))
+        ,VAC.HH_ID				                                    -- 계사ID / Hen House ID / hhcode
+        ,JSON_ARRAYAGG(
+            JSON_OBJECT(
+                'seq_no' VALUE CASE VAC.SEQ_NO WHEN NULL THEN '' ELSE TO_CHAR(VAC.SEQ_NO) END
+                ,'code' VALUE VAC.VACCINE_CODE
+                ,'name' VALUE MA.MATERIAL_NAME
+                ,'using' VALUE MA.USING_CLASS
+                ,'using_name' VALUE CD.CODE_STEXT
+                ,'amount' VALUE VAC.USE_AMT
+                ,'unit' VALUE MA.UNIT
+            )
+        )  VAC_HIST -- JSON_ARRAY
+    FROM TP_BREED_LOG_VAC VAC
+    LEFT JOIN TC_MATERIAL_INFO MA ON VAC.VACCINE_CODE = MA.MATERIAL_CODE
+    LEFT JOIN TC_CODE_DTL CD
+        ON CD.COUNTRY_CODE = (SELECT FM.COUNTRY_CODE FROM TC_FARM_INFO FM WHERE FM.FARM_CODE = VAC.FARM_CODE) --'01'
+            AND CD.CODE_ID = 'EP22' AND CD.CODE_VALUE = MA.USING_CLASS
+    GROUP BY VAC.WORK_DATE, VAC.FARM_CODE, VAC.FLOCK_ID, VAC.HH_ID
+) VAC ON VAC.VAC_DATE = BR.WORK_DATE AND VAC.FARM_CODE = BR.FARM_CODE
+        AND VAC.FLOCK_ID = BR.FLOCK_ID AND VAC.HH_ID = BR.HH_ID
+LEFT JOIN TP_EGGPROD_LOG EGP   -- 종란 생산
+    ON BR.WORK_DATE = EGP.EP_DATE AND BR.FARM_CODE = EGP.FARM_CODE
+        AND BR.FLOCK_ID = EGP.FLOCK_ID AND BR.HH_ID = EGP.HH_ID
+LEFT JOIN ( -- 부화장 전달 (종계장 출고)
+    SELECT EGT.EP_DATE, EGT.FARM_CODE, EGT.FLOCK_ID, EGT.HH_ID
+        ,SUM( CASE EGT.TRANSFER_TYPE WHEN 'T' THEN EGT.GOOD_EGG_QTY ELSE 0 END ) T_GOOD_EGG_QTY -- 부화장 출고
+        ,SUM( CASE EGT.TRANSFER_TYPE WHEN 'S' THEN EGT.GOOD_EGG_QTY ELSE 0 END ) S_GOOD_EGG_QTY -- 판매
+        ,SUM( CASE EGT.TRANSFER_TYPE WHEN 'D' THEN EGT.GOOD_EGG_QTY ELSE 0 END ) D_GOOD_EGG_QTY -- 기부
+        ,SUM( CASE EGT.TRANSFER_TYPE WHEN 'X' THEN EGT.GOOD_EGG_QTY ELSE 0 END ) X_GOOD_EGG_QTY -- 폐기
+        ,SUM( CASE EGT.TRANSFER_TYPE WHEN 'T' THEN
+                EGT.CRACK_EGG_QTY + EGT.DAMAGE_EGG_QTY + EGT.DIRTY_EGG_QTY + EGT.JUMBO_EGG_QTY + EGT.SMALL_EGG_QTY + EGT.MISS_SHAPE_EGG_QTY
+            ELSE 0 END ) T_CULL_EGG_QTY
+        ,SUM( CASE EGT.TRANSFER_TYPE WHEN 'S' THEN
+                EGT.CRACK_EGG_QTY + EGT.DAMAGE_EGG_QTY + EGT.DIRTY_EGG_QTY + EGT.JUMBO_EGG_QTY + EGT.SMALL_EGG_QTY + EGT.MISS_SHAPE_EGG_QTY
+            ELSE 0 END ) S_CULL_EGG_QTY
+        ,SUM( CASE EGT.TRANSFER_TYPE WHEN 'D' THEN
+                EGT.CRACK_EGG_QTY + EGT.DAMAGE_EGG_QTY + EGT.DIRTY_EGG_QTY + EGT.JUMBO_EGG_QTY + EGT.SMALL_EGG_QTY + EGT.MISS_SHAPE_EGG_QTY
+            ELSE 0 END ) D_CULL_EGG_QTY
+        ,SUM( CASE EGT.TRANSFER_TYPE WHEN 'X' THEN
+                EGT.CRACK_EGG_QTY + EGT.DAMAGE_EGG_QTY + EGT.DIRTY_EGG_QTY + EGT.JUMBO_EGG_QTY + EGT.SMALL_EGG_QTY + EGT.MISS_SHAPE_EGG_QTY
+            ELSE 0 END ) X_CULL_EGG_QTY
+-- 종 egg 출고 현황
+        ,SUM(EGT.GOOD_EGG_QTY) D_EGT_GOOD_EGG_QTY
+        ,SUM(EGT.CRACK_EGG_QTY) D_EGT_CRACK_EGG_QTY
+        ,SUM(EGT.DAMAGE_EGG_QTY) D_EGT_DAMAGE_EGG_QTY
+        ,SUM(EGT.DIRTY_EGG_QTY) D_EGT_DIRTY_EGG_QTY
+        ,SUM(EGT.JUMBO_EGG_QTY) D_EGT_JUMBO_EGG_QTY
+        ,SUM(EGT.SMALL_EGG_QTY) D_EGT_SMALL_EGG_QTY
+        ,SUM(EGT.MISS_SHAPE_EGG_QTY) D_EGT_MISS_SHAPE_EGG_QTY
+        ,JSON_ARRAYAGG(
+            JSON_OBJECT(
+                'transfer_date' VALUE TO_CHAR(EGT.TRANSFER_DATE, 'YYYY-MM-DD')
+                ,'transfer_no' VALUE EGT.TRANSFER_NO
+                ,'hatchery_id' VALUE EGT.HATCHERY_ID
+                ,'transfer_type' VALUE EGT.TRANSFER_TYPE
+                ,'p_order_no' VALUE EGT.P_ORDER_NO
+                ,'customer_code' VALUE EGT.CUSTOMER_CODE
+                ,'transfer_qty' VALUE  EGT.TRANSFER_QTY
+                ,'weight' VALUE  EGT.WEIGHT
+                ,'truck_no' VALUE EGT.TRUCK_NO
+                ,'remakrs' VALUE EGT.REMARKS
+                ,'hh_transfer_qty' VALUE EGT.HH_TRANSFER_QTY
+                ,'egg' VALUE JSON_OBJECT (
+                    'ep_date' VALUE TO_CHAR(EGT.EP_DATE, 'YYYY-MM-DD')
+                    ,'strain_code' VALUE EGT.STRAIN_CODE
+                    ,'good' VALUE EGT.GOOD_EGG_QTY
+                    ,'crack' VALUE EGT.CRACK_EGG_QTY
+                    ,'damage' VALUE EGT.DAMAGE_EGG_QTY
+                    ,'dirty' VALUE EGT.DIRTY_EGG_QTY
+                    ,'jumbo' VALUE EGT.JUMBO_EGG_QTY
+                    ,'small' VALUE EGT.SMALL_EGG_QTY
+                    ,'miss_shape' VALUE EGT.MISS_SHAPE_EGG_QTY
+                    ,'total' VALUE (EGT.GOOD_EGG_QTY+EGT.CRACK_EGG_QTY+EGT.DAMAGE_EGG_QTY+EGT.DIRTY_EGG_QTY+EGT.JUMBO_EGG_QTY+EGT.SMALL_EGG_QTY+EGT.MISS_SHAPE_EGG_QTY)
+                    ABSENT ON NULL
+                )
+                ,'day_tx_ratio' VALUE TO_CHAR(ROUND(DAY_TX_RATIO, 6), 'FM9999999990.000000') FORMAT JSON  -- daily ratio per tx
+                ABSENT ON NULL
+            ) ORDER BY EGT.TRANSFER_DATE, EGT.TRANSFER_NO, EGT.HATCHERY_ID , EGT.EP_DATE
+        ) D_EGG_DTL
+      --  ,COUNT(*) OVER()
+    FROM TP_EGGPROD_LOG EGP
+    LEFT JOIN (
+        SELECT EGT.EP_DATE, EGT.FARM_CODE, EGT.FLOCK_ID, EGT.HH_ID, EGTM.TRANSFER_DATE, EGTM.TRANSFER_TYPE
+            ,EGT.STRAIN_CODE, EGT.GOOD_EGG_QTY, EGT.CRACK_EGG_QTY, EGT.DAMAGE_EGG_QTY
+            ,EGT.DIRTY_EGG_QTY,EGT.JUMBO_EGG_QTY,EGT.SMALL_EGG_QTY,EGT.MISS_SHAPE_EGG_QTY
+            ,EGTM.HATCHERY_ID
+            ,EGT.TRANSFER_NO
+            ,(EGTH.GOOD_EGG_QTY + EGTH.CRACK_EGG_QTY + EGTH.DAMAGE_EGG_QTY + EGTH.DIRTY_EGG_QTY + EGTH.JUMBO_EGG_QTY + EGTH.SMALL_EGG_QTY + EGTH.MISS_SHAPE_EGG_QTY) HH_TRANSFER_QTY
+            ,EGTM.P_ORDER_NO, EGTM.CUSTOMER_CODE, EGTM.TRANSFER_QTY, EGTM.WEIGHT, EGTM.TRUCK_NO, EGTM.REMARKS
+            ,EGT.GOOD_EGG_QTY/EGTH.GOOD_EGG_QTY DAY_TX_RATIO  -- ep_date to transfer ratio
+     --       ,COUNT(*) OVER() COUNT
+        FROM TP_EGG_TRANSFER_EPDATE EGT
+        INNER JOIN TP_EGG_TRANSFER_MAST EGTM
+        ON EGT.FARM_CODE = EGTM.FARM_CODE AND EGT.TRANSFER_NO = EGTM.TRANSFER_NO
+        LEFT JOIN TP_EGG_TRANSFER_HH EGTH
+        ON EGT.FARM_CODE = EGTH.FARM_CODE AND EGT.FLOCK_ID = EGTH.FLOCK_ID
+            AND EGT.HH_ID = EGTH.HH_ID AND EGT.TRANSFER_NO = EGTH.TRANSFER_NO
+    ) EGT ON EGP.EP_DATE = EGT.EP_DATE AND EGP.FARM_CODE = EGT.FARM_CODE
+      AND EGP.FLOCK_ID = EGT.FLOCK_ID AND EGP.HH_ID = EGT.HH_ID
+    GROUP BY EGT.EP_DATE, EGT.FARM_CODE, EGT.FLOCK_ID, EGT.HH_ID
+    ORDER BY EGT.EP_DATE, EGT.FARM_CODE, EGT.FLOCK_ID, EGT.HH_ID
+) EGT ON BR.WORK_DATE = EGT.EP_DATE AND BR.FARM_CODE = EGT.FARM_CODE
+      AND BR.FLOCK_ID = EGT.FLOCK_ID AND BR.HH_ID = EGT.HH_ID
+---HATCHERY PART
+LEFT JOIN (  -- transfer to hatchery, grading, setting, hatching link by ep_date
+    SELECT
+-- 종계 종란 출고 현황... 이 부분은 향후 삭제 예정
+         EGT.EP_DATE, EGT.FARM_CODE, EGT.FLOCK_ID, EGT.HH_ID,
+         SUM(EGT.GOOD_EGG_QTY) D_EGT_GOOD_EGG_QTY
+        ,SUM(EGT.CRACK_EGG_QTY) D_EGT_CRACK_EGG_QTY
+        ,SUM(EGT.DAMAGE_EGG_QTY) D_EGT_DAMAGE_EGG_QTY
+        ,SUM(EGT.DIRTY_EGG_QTY) D_EGT_DIRTY_EGG_QTY
+        ,SUM(EGT.JUMBO_EGG_QTY) D_EGT_JUMBO_EGG_QTY
+        ,SUM(EGT.SMALL_EGG_QTY) D_EGT_SMALL_EGG_QTY
+        ,SUM(EGT.MISS_SHAPE_EGG_QTY) D_EGT_MISS_SHAPE_EGG_QTY
+        ,JSON_ARRAYAGG(
+            JSON_OBJECT(
+                'transfer_no' VALUE TO_CHAR(EGT.TRANSFER_NO)
+                ,'transfer_date' VALUE TO_CHAR(ETM.TRANSFER_DATE, 'YYYY-MM-DD')
+                ,'p_order' VALUE ETM.P_ORDER_NO
+                ,'hatchery_id' VALUE ETM.HATCHERY_ID
+                ,'customer_code' VALUE ETM.CUSTOMER_CODE
+                ,'egg' VALUE JSON_OBJECT (
+                    'strain_code' VALUE EGH.STRAIN_CODE
+                    ,'good' VALUE EGH.GOOD_EGG_QTY
+                    ,'crack' VALUE EGH.CRACK_EGG_QTY
+                    ,'damage' VALUE EGH.DAMAGE_EGG_QTY
+                    ,'dirty' VALUE EGH.DIRTY_EGG_QTY
+                    ,'jumbo' VALUE EGH.JUMBO_EGG_QTY
+                    ,'small' VALUE EGH.SMALL_EGG_QTY
+                    ,'miss_shape' VALUE EGH.MISS_SHAPE_EGG_QTY
+                    -- ABSENT .  ON NULL
+                )
+                ,'day_tx_ratio' VALUE TO_CHAR(ROUND(EGT.GOOD_EGG_QTY/EGH.GOOD_EGG_QTY, 6), 'FM9999999990.000000') FORMAT JSON
+                -- ABSENT .  ON NULL
+            ) ORDER BY EGT.TRANSFER_NO
+        ) D_EGG_DTL
+-- 종란 부화장 입고 현황
+        ,ROUND(SUM(
+            (HER.R_GOOD_EGG_QTY + HER.R_DIRTY_EGG_QTY + HER.R_JUMBO_EGG_QTY + HER.R_SMALL_EGG_QTY + HER.R_MISS_SHAPE_EGG_QTY)
+                 * EGT.GOOD_EGG_QTY/EGH.GOOD_EGG_QTY
+        ), 0)R_HER_EGG_QTY
+        ,ROUND(SUM(
+            (HER.R_GOOD_EGG_QTY )
+                 * EGT.GOOD_EGG_QTY/EGH.GOOD_EGG_QTY
+        ), 0)R_HER_GOOD_EGG_QTY
+        ,ROUND(SUM(
+            (HER.R_DIRTY_EGG_QTY)
+                 * EGT.GOOD_EGG_QTY/EGH.GOOD_EGG_QTY
+        ), 0)R_HER_DIRTY_EGG_QTY
+        ,ROUND(SUM(
+            (HER.R_JUMBO_EGG_QTY)
+                 * EGT.GOOD_EGG_QTY/EGH.GOOD_EGG_QTY
+        ), 0)R_HER_JUMBO_EGG_QTY
+        ,ROUND(SUM(
+            (HER.R_SMALL_EGG_QTY)
+                 * EGT.GOOD_EGG_QTY/EGH.GOOD_EGG_QTY
+        ), 0)R_HER_SMALL_EGG_QTY
+        ,ROUND(SUM(
+            (HER.R_MISS_SHAPE_EGG_QTY)
+                 * EGT.GOOD_EGG_QTY/EGH.GOOD_EGG_QTY
+        ), 0)R_HER_MISS_SHAPE_EGG_QTY
+        ,ROUND(SUM(
+            (HER.MOVE_OUT_GOOD_EGG_QTY + HER.MOVE_OUT_DIRTY_EGG_QTY + HER.MOVE_OUT_JUMBO_EGG_QTY + HER.MOVE_OUT_SMALL_EGG_QTY + HER.MOVE_OUT_MISS_SHAPE_EGG_QTY)
+                 * EGT.GOOD_EGG_QTY/EGH.GOOD_EGG_QTY
+        ), 0) MOVE_OUT_HER_EGG_QTY
+        ,ROUND(SUM(
+            (HER.MOVE_IN_GOOD_EGG_QTY + HER.MOVE_IN_DIRTY_EGG_QTY + HER.MOVE_IN_JUMBO_EGG_QTY + HER.MOVE_IN_SMALL_EGG_QTY + HER.MOVE_IN_MISS_SHAPE_EGG_QTY)
+                 * EGT.GOOD_EGG_QTY/EGH.GOOD_EGG_QTY
+        ), 0) MOVE_IN_HER_EGG_QTY
+        ,JSON_ARRAYAGG(
+            JSON_OBJECT(
+                'hatchery_id' VALUE HER.HATCHERY_ID
+                ,'egg_receive_no' VALUE TO_CHAR(HER.EGG_RECEIVE_NO)
+                ,'transfer_no' VALUE TO_CHAR(HER.TRANSFER_NO)
+                ,'receive_date' VALUE TO_CHAR(HER.RECEIVE_DATE, 'YYYY-MM-DD')
+                ,'qood_egg' VALUE HER.GOOD_EGG_QTY
+                ,'dirty_egg' VALUE HER.DIRTY_EGG_QTY
+                ,'jumbo_egg' VALUE HER.JUMBO_EGG_QTY
+                ,'small_egg' VALUE HER.SMALL_EGG_QTY
+                ,'miss_shape_egg' VALUE HER.MISS_SHAPE_EGG_QTY
+                ,'day_tx_ratio' VALUE TO_CHAR(ROUND(EGT.GOOD_EGG_QTY/EGH.GOOD_EGG_QTY, 6), 'FM9999999990.000000') FORMAT JSON
+                ,'move_in_flag' VALUE HER.MOVE_IN_FLAG
+                ,'from_hatchery_id' VALUE HER.FROM_HATCHERY_ID
+                ,'from_receive_no'  VALUE HER.FROM_RECEIVE_NO
+                ,'grading_date' VALUE TO_CHAR(HER.GRADING_DATE, 'YYYY-MM-DD')
+                ,'move_out_date' VALUE TO_CHAR(HER.MOVE_OUT_DATE, 'YYYY-MM-DD')
+                ,'truck_no' VALUE HER.TRUCK_NO
+                ,'remarks' VALUE HER.REMARKS
+                -- ABSENT .  ON NULL
+            ) ORDER BY HER.HATCHERY_ID, HER.EGG_RECEIVE_NO
+        ) TL_HATCHERY_RECV
+-- 종란 검란 현황
+        ,ROUND(SUM(
+            (
+                HER.R_GOOD_EGG_QTY + HER.R_DIRTY_EGG_QTY + HER.R_JUMBO_EGG_QTY + HER.R_SMALL_EGG_QTY + HER.R_MISS_SHAPE_EGG_QTY
+                - GRI.MISS_SHAPE_EGG_QTY - GRI.THIN_EGG_QTY - GRI.CRACK_EGG_QTY - GRI.DAMAGE_EGG_QTY - GRI.DIRTY_EGG_QTY - GRI.JUMBO_EGG_QTY - GRI.SMALL_EGG_QTY
+                - NVL(GRI_CUT_HATCHING_EGG_QTY,0)
+            ) * EGT.GOOD_EGG_QTY/EGH.GOOD_EGG_QTY
+        ),0) GRI_TOTAL_EGG_QTY
+        ,ROUND(SUM(
+            (
+                GRI.HATCHING_EGG_QTY
+            ) * EGT.GOOD_EGG_QTY/EGH.GOOD_EGG_QTY
+        ), 0) GRI_HATCHING_EGG_QTY
+        ,ROUND(SUM(
+            (
+                GRI.MISS_SHAPE_EGG_QTY
+            ) * EGT.GOOD_EGG_QTY/EGH.GOOD_EGG_QTY
+        ), 0) GRI_MISS_SHAPE_EGG_QTY
+        ,ROUND(SUM(
+            (
+                GRI.THIN_EGG_QTY
+            ) * EGT.GOOD_EGG_QTY/EGH.GOOD_EGG_QTY
+        ), 0) GRI_THIN_EGG_QTY
+        ,ROUND(SUM(
+            (
+                GRI.CRACK_EGG_QTY
+            ) * EGT.GOOD_EGG_QTY/EGH.GOOD_EGG_QTY
+        ), 0) GRI_CRACK_EGG_QTY
+        ,ROUND(SUM(
+            (
+                GRI.DAMAGE_EGG_QTY
+            ) * EGT.GOOD_EGG_QTY/EGH.GOOD_EGG_QTY
+        ), 0) GRI_DAMAGE_EGG_QTY
+        ,ROUND(SUM(
+            (
+                GRI.DIRTY_EGG_QTY
+            ) * EGT.GOOD_EGG_QTY/EGH.GOOD_EGG_QTY
+        ), 0) GRI_DIRTY_EGG_QTY
+        ,ROUND(SUM(
+            (
+                GRI.JUMBO_EGG_QTY
+            ) * EGT.GOOD_EGG_QTY/EGH.GOOD_EGG_QTY
+        ), 0) GRI_JUMBO_EGG_QTY
+        ,ROUND(SUM(
+            (
+                GRI.SMALL_EGG_QTY
+            ) * EGT.GOOD_EGG_QTY/EGH.GOOD_EGG_QTY
+        ), 0) GRI_SMALL_EGG_QTY
+        ,ROUND(SUM(
+            (
+                NVL(GRI_CUT.GRI_CUT_HATCHING_EGG_QTY,0)
+            ) * EGT.GOOD_EGG_QTY/EGH.GOOD_EGG_QTY
+        ), 0) GRI_CUTTING_EGG_QTY
+        ,JSON_ARRAYAGG(
+            JSON_OBJECT(
+                'hatchery_id' VALUE GRI.HATCHERY_ID
+                ,'egg_receive_no' VALUE TO_CHAR(GRI.EGG_RECEIVE_NO)
+                ,'strain_code' VALUE GRI.STRAIN_CODE
+                ,'grading_date' VALUE TO_CHAR(GRI.GRADING_DATE, 'YYYY-MM-DD')
+                ,'grading_qty' VALUE GRI.GRADING_QTY
+                ,'hatching_egg_qty' VALUE GRI.HATCHING_EGG_QTY
+                ,'miss_shape_egg_qty' VALUE GRI.MISS_SHAPE_EGG_QTY
+                ,'thin_egg_qty' VALUE GRI.THIN_EGG_QTY
+                ,'crack_egg_qty' VALUE GRI.CRACK_EGG_QTY
+                ,'damage_egg_qty' VALUE GRI.DAMAGE_EGG_QTY
+                ,'dirty_egg_qty' VALUE GRI.DIRTY_EGG_QTY
+                ,'jumbo_egg_qty' VALUE GRI.JUMBO_EGG_QTY
+                ,'small_egg_qty' VALUE GRI.SMALL_EGG_QTY
+                ,'grading_rem' VALUE GRI.GRADING_REM
+                ,'setting_qty' VALUE GRI.SETTING_QTY
+                ,'transfer_qty' VALUE GRI.TRANSFER_QTY
+                ,'discard_qty' VALUE GRI.DISCARD_QTY
+                ,'none_setting_qty' VALUE GRI.NONE_SETTING_QTY
+                ,'discard_rem' VALUE GRI.DISCARD_REM
+                ,'day_tx_ratio' VALUE TO_CHAR(ROUND(EGT.GOOD_EGG_QTY/EGH.GOOD_EGG_QTY, 6), 'FM9999999990.000000') FORMAT JSON
+                ,'grading_cut' VALUE NVL(GRI_CUT.GRI_CUT_HATCHING_EGG_QTY,0)
+                ,'grading_cut_dtl' VALUE GRI_CUT.GRI_CUT_HIST FORMAT JSON
+                -- ABSENT .  ON NULL
+            ) ORDER BY GRI.HATCHERY_ID, GRI.EGG_RECEIVE_NO
+        ) GRI_GRADING_INFO_DTL
+-- 종란 부화장 셋팅 현황
+        ,ROUND(SUM(
+            (
+                NVL(SETT.SETT_SETTING_QTY,0)
+            ) * EGT.GOOD_EGG_QTY/EGH.GOOD_EGG_QTY
+        ) , 0) SETT_SETTING_QTY
+        ,ROUND(SUM(
+            (
+                NVL(SETT.SETT_FERTILE_QTY,0)
+            ) * EGT.GOOD_EGG_QTY/EGH.GOOD_EGG_QTY
+        ),0) SETT_FERTILE_QTY
+        ,ROUND(SUM(
+            (
+                NVL(SETT.SETT_INFERTILE_QTY,0)
+            ) * EGT.GOOD_EGG_QTY/EGH.GOOD_EGG_QTY
+        ) , 0)SETT_INFERTILE_QTY
+        ,ROUND(SUM(
+            (
+                NVL(SETT.SETT_EXPLODE_QTY,0)
+            ) * EGT.GOOD_EGG_QTY/EGH.GOOD_EGG_QTY
+        ), 0) SETT_EXPLODE_QTY
+        ,ROUND(SUM(
+            (
+                NVL(SETT.SETT_CUT_SETTING_QTY,0)
+            ) * EGT.GOOD_EGG_QTY/EGH.GOOD_EGG_QTY
+        ), 0) SETT_CUT_SETTING_QTY
+        ,ROUND(SUM(
+            (
+                NVL(SETT.SETT_CUT_FERTILE_QTY,0)
+            ) * EGT.GOOD_EGG_QTY/EGH.GOOD_EGG_QTY
+        ), 0) SETT_CUT_FERTILE_QTY
+        ,JSON_ARRAYAGG(
+            JSON_OBJECT(
+                'hatchery_id' VALUE SETT.SETT_HATCHERY_ID
+                ,'egg_receive_no' VALUE TO_CHAR(SETT.SETT_EGG_RECEIVE_NO)
+                ,'setting_sub_dtl' VALUE SETT.SETT_SETTING_DTL
+                ,'day_tx_ratio' VALUE TO_CHAR(ROUND(EGT.GOOD_EGG_QTY/EGH.GOOD_EGG_QTY, 6), 'FM9999999990.000000') FORMAT JSON
+               ABSENT  ON NULL
+            )
+        ) SETT_DTL
+-- 부화장 부화 정보
+        ,ROUND(SUM(
+            (
+                NVL(HATCHING.HATCHING_DIS_QTY,0)
+            ) * EGT.GOOD_EGG_QTY/EGH.GOOD_EGG_QTY
+        ), 0) HATCHING_DIS_QTY
+        ,ROUND(SUM(
+            (
+                NVL(HATCHING.HATCHING_DEF_QTY,0)
+            ) * EGT.GOOD_EGG_QTY/EGH.GOOD_EGG_QTY
+        ), 0) HATCHING_DEF_QTY
+        ,ROUND(SUM(
+            (
+                NVL(HATCHING.HATCHING_BLOT_QTY,0)
+            ) * EGT.GOOD_EGG_QTY/EGH.GOOD_EGG_QTY
+        ), 0) HATCHING_BLOT_QTY
+        ,ROUND(SUM(
+            (
+                NVL(HATCHING.HATCHING_DEAD_QTY,0)
+            ) * EGT.GOOD_EGG_QTY/EGH.GOOD_EGG_QTY
+        ), 0) HATCHING_DEAD_QTY
+        ,ROUND(SUM(
+            (
+                NVL(HATCHING.HATCHING_OMPAL_QTY,0)
+            ) * EGT.GOOD_EGG_QTY/EGH.GOOD_EGG_QTY
+        ), 0) HATCHING_OMPAL_QTY
+        ,ROUND(SUM(
+            (
+                NVL(HATCHING.HATCHING_WEAK_QTY,0)
+            ) * EGT.GOOD_EGG_QTY/EGH.GOOD_EGG_QTY
+        ), 0) HATCHING_WEAK_QTY
+        ,ROUND(SUM(
+            (
+                NVL(HATCHING.HATCHING_PSDOC_F_QTY,0)
+            ) * EGT.GOOD_EGG_QTY/EGH.GOOD_EGG_QTY
+        ), 0) HATCHING_PSDOC_F_QTY
+        ,ROUND(SUM(
+            (
+                NVL(HATCHING.HATCHING_PSDOC_M_QTY,0)
+            ) * EGT.GOOD_EGG_QTY/EGH.GOOD_EGG_QTY
+        ), 0) HATCHING_PSDOC_M_QTY
+        ,ROUND(SUM(
+            (
+                NVL(HATCHING.HATCHING_SEX_QTY,0)
+            ) * EGT.GOOD_EGG_QTY/EGH.GOOD_EGG_QTY
+        ), 0) HATCHING_SEX_QTY
+        ,ROUND(SUM(
+            (
+                NVL(HATCHING.HATCHING_SP_QTY,0)
+            ) * EGT.GOOD_EGG_QTY/EGH.GOOD_EGG_QTY
+        ), 0) HATCHING_SP_QTY
+        ,ROUND(SUM(
+            (
+                NVL(HATCHING.HATCHING_A2_QTY,0)
+            ) * EGT.GOOD_EGG_QTY/EGH.GOOD_EGG_QTY
+        ), 0) HATCHING_A2_QTY
+        ,ROUND(SUM(
+            (
+                NVL(HATCHING.HATCHING_A1_QTY,0)
+            ) * EGT.GOOD_EGG_QTY/EGH.GOOD_EGG_QTY
+        ), 0) HATCHING_A1_QTY
+        ,ROUND(SUM(
+            (
+                NVL(HATCHING.HATCHING_BM_QTY,0)
+            ) * EGT.GOOD_EGG_QTY/EGH.GOOD_EGG_QTY
+        ), 0) HATCHING_BM_QTY
+        ,ROUND(SUM(
+            (
+                NVL(HATCHING.HATCHING_B_QTY,0)
+            ) * EGT.GOOD_EGG_QTY/EGH.GOOD_EGG_QTY
+        ), 0) HATCHING_B_QTY
+        ,ROUND(SUM(
+            (
+                NVL(HATCHING.HATCHING_POLOS_QTY,0)
+            ) * EGT.GOOD_EGG_QTY/EGH.GOOD_EGG_QTY
+        ), 0) HATCHING_POLOS_QTY
+--
+        ,ROUND(SUM(
+            (
+                NVL(HATCHING.HATCHING_CUT_SP_QTY,0)
+            ) * EGT.GOOD_EGG_QTY/EGH.GOOD_EGG_QTY
+        ), 0) HATCHING_CUT_SP_QTY
+        ,ROUND(SUM(
+            (
+                NVL(HATCHING.HATCHING_CUT_A1_QTY,0)
+            ) * EGT.GOOD_EGG_QTY/EGH.GOOD_EGG_QTY
+        ), 0) HATCHING_CUT_A1_QTY
+        ,ROUND(SUM(
+            (
+                NVL(HATCHING.HATCHING_CUT_A2_QTY,0)
+            ) * EGT.GOOD_EGG_QTY/EGH.GOOD_EGG_QTY
+        ), 0) HATCHING_CUT_A2_QTY
+        ,ROUND(SUM(
+            (
+                NVL(HATCHING.HATCHING_CUT_BM_QTY,0)
+            ) * EGT.GOOD_EGG_QTY/EGH.GOOD_EGG_QTY
+        ), 0) HATCHING_CUT_BM_QTY
+        ,ROUND(SUM(
+            (
+                NVL(HATCHING.HATCHING_CUT_B_QTY,0)
+            ) * EGT.GOOD_EGG_QTY/EGH.GOOD_EGG_QTY
+        ), 0) HATCHING_CUT_B_QTY
+        ,ROUND(SUM(
+            (
+                NVL(HATCHING.HATCHING_CUT_POLOS_QTY,0)
+            ) * EGT.GOOD_EGG_QTY/EGH.GOOD_EGG_QTY
+        ), 0) HATCHING_CUT_POLOS_QTY
+        ,JSON_ARRAYAGG(
+            JSON_OBJECT(
+                'hatchery_id' VALUE HATCHING.HATCHING_HATCHERY_ID
+                ,'egg_receive_no' VALUE TO_CHAR(HATCHING.HATCHING_EGG_RECEIVE_NO)
+                ,'hatching_sub_dtl' VALUE  HATCHING.HATCHING_DTL
+                ,'day_tx_ratio' VALUE TO_CHAR(ROUND(EGT.GOOD_EGG_QTY/EGH.GOOD_EGG_QTY, 6), 'FM9999999990.000000') FORMAT JSON
+               ABSENT  ON NULL
+            ) ORDER BY HATCHING.HATCHING_HATCHERY_ID, HATCHING.HATCHING_EGG_RECEIVE_NO
+        ) HATCHING_DTL
+        FROM TP_EGG_TRANSFER_EPDATE EGT   -- 종란 출고
+            LEFT JOIN TP_EGG_TRANSFER_MAST ETM ON ETM.FARM_CODE = EGT.FARM_CODE AND ETM.TRANSFER_NO = EGT.TRANSFER_NO
+            LEFT JOIN TP_EGG_TRANSFER_HH EGH ON EGH.FARM_CODE = EGT.FARM_CODE AND EGH.FLOCK_ID = EGT.FLOCK_ID AND EGH.HH_ID = EGT.HH_ID
+                        AND EGH.TRANSFER_NO = EGT.TRANSFER_NO
+            LEFT JOIN (  -- 종란 부화장 입고
+                SELECT
+                    HER.FARM_CODE, HER.FLOCK_ID, HER.HH_ID, HER.TRANSFER_NO, HER.HATCHERY_ID
+                    ,HER.EGG_RECEIVE_NO ,HER.P_ORDER_NO ,HER.CUSTOMER_CODE ,HER.STRAIN_CODE
+                    ,HER.RECEIVE_DATE ,HER.MOVE_IN_FLAG ,HER.FROM_RECEIVE_NO ,HER.FROM_HATCHERY_ID
+                    ,HER.GRADING_DATE ,HER.MOVE_OUT_DATE ,HER.TRUCK_NO ,HER.REMARKS
+                    ,HER.GOOD_EGG_QTY GOOD_EGG_QTY ,HER.DIRTY_EGG_QTY DIRTY_EGG_QTY ,HER.JUMBO_EGG_QTY JUMBO_EGG_QTY
+                    ,HER.SMALL_EGG_QTY SMALL_EGG_QTY ,HER.MISS_SHAPE_EGG_QTY MISS_SHAPE_EGG_QTY
+                    ,CASE HER.MOVE_IN_FLAG WHEN 'N' THEN  HER.GOOD_EGG_QTY  END R_GOOD_EGG_QTY-- 입고 수량
+                    ,CASE WHEN HER.MOVE_IN_FLAG = 'Y' AND HER.MOVE_OUT_DATE IS NOT NULL THEN HER.GOOD_EGG_QTY END MOVE_OUT_GOOD_EGG_QTY
+                    ,CASE WHEN HER.MOVE_IN_FLAG = 'Y' AND HER.MOVE_OUT_DATE IS  NULL THEN HER.GOOD_EGG_QTY END MOVE_IN_GOOD_EGG_QTY
+                    ,CASE HER.MOVE_IN_FLAG WHEN 'N' THEN  HER.DIRTY_EGG_QTY  END R_DIRTY_EGG_QTY-- 입고 수량
+                    ,CASE WHEN HER.MOVE_IN_FLAG = 'Y' AND HER.MOVE_OUT_DATE IS NOT NULL THEN HER.DIRTY_EGG_QTY END MOVE_OUT_DIRTY_EGG_QTY
+                    ,CASE WHEN HER.MOVE_IN_FLAG = 'Y' AND HER.MOVE_OUT_DATE IS  NULL THEN HER.GOOD_EGG_QTY END MOVE_IN_DIRTY_EGG_QTY
+                    ,CASE HER.MOVE_IN_FLAG WHEN 'N' THEN  HER.JUMBO_EGG_QTY  END R_JUMBO_EGG_QTY-- 입고 수량
+                    ,CASE WHEN HER.MOVE_IN_FLAG = 'Y' AND HER.MOVE_OUT_DATE IS NOT NULL THEN HER.DIRTY_EGG_QTY END MOVE_OUT_JUMBO_EGG_QTY
+                    ,CASE WHEN HER.MOVE_IN_FLAG = 'Y' AND HER.MOVE_OUT_DATE IS  NULL THEN HER.GOOD_EGG_QTY END MOVE_IN_JUMBO_EGG_QTY
+                    ,CASE HER.MOVE_IN_FLAG WHEN 'N' THEN  HER.SMALL_EGG_QTY  END R_SMALL_EGG_QTY-- 입고 수량
+                    ,CASE WHEN HER.MOVE_IN_FLAG = 'Y' AND HER.MOVE_OUT_DATE IS NOT NULL THEN HER.DIRTY_EGG_QTY END MOVE_OUT_SMALL_EGG_QTY
+                    ,CASE WHEN HER.MOVE_IN_FLAG = 'Y' AND HER.MOVE_OUT_DATE IS  NULL THEN HER.SMALL_EGG_QTY END MOVE_IN_SMALL_EGG_QTY
+                    ,CASE HER.MOVE_IN_FLAG WHEN 'N' THEN  HER.MISS_SHAPE_EGG_QTY  END R_MISS_SHAPE_EGG_QTY-- 입고 수량
+                    ,CASE WHEN HER.MOVE_IN_FLAG = 'Y' AND HER.MOVE_OUT_DATE IS NOT NULL THEN HER.DIRTY_EGG_QTY END MOVE_OUT_MISS_SHAPE_EGG_QTY
+                    ,CASE WHEN HER.MOVE_IN_FLAG = 'Y' AND HER.MOVE_OUT_DATE IS  NULL THEN HER.GOOD_EGG_QTY END MOVE_IN_MISS_SHAPE_EGG_QTY
+                    FROM TL_HATCHING_EGG_RECV HER
+            ) HER ON HER.TRANSFER_NO = EGT.TRANSFER_NO AND HER.FARM_CODE = EGT.FARM_CODE
+                    AND HER.FLOCK_ID = EGT.FLOCK_ID AND HER.HH_ID = EGT.HH_ID
+            LEFT JOIN (  -- 종란 부화장 검란
+                SELECT
+                    GRI.HATCHERY_ID, GRI.EGG_RECEIVE_NO
+                    ,GRI.STRAIN_CODE ,GRI.RECEIVE_DATE ,GRI.GRADING_DATE ,GRI.GRADING_QTY ,GRI.HATCHING_EGG_QTY
+                    ,GRI.MISS_SHAPE_EGG_QTY ,GRI.THIN_EGG_QTY ,GRI.CRACK_EGG_QTY ,GRI.DAMAGE_EGG_QTY ,GRI.DIRTY_EGG_QTY
+                    ,GRI.JUMBO_EGG_QTY ,GRI.SMALL_EGG_QTY ,GRI.GRADING_REM ,GRI.SETTING_QTY ,GRI.TRANSFER_QTY
+                    ,GRI.DISCARD_QTY ,GRI.NONE_SETTING_QTY ,GRI.DISCARD_REM
+                FROM TL_GRADING_INFO GRI
+            ) GRI ON GRI.HATCHERY_ID = HER.HATCHERY_ID AND GRI.EGG_RECEIVE_NO = HER.EGG_RECEIVE_NO
+            LEFT JOIN (  -- 종란 Cutting
+                SELECT GRI.HATCHERY_ID, GRI.EGG_RECEIVE_NO
+                    ,SUM(GRI_CUT.HATCHING_EGG_QTY) GRI_CUT_HATCHING_EGG_QTY
+                    ,JSON_ARRAYAGG(
+                        JSON_OBJECT(
+                            'seq_no' VALUE TO_CHAR(GRI_CUT.SEQ_NO)
+                            ,'receive_date' VALUE TO_CHAR(GRI_CUT.RECEIVE_DATE, 'YYYY-MM-DD')
+                            ,'hatching_egg_qty' VALUE GRI_CUT.HATCHING_EGG_QTY
+                            ,'work_date' VALUE TO_CHAR(GRI_CUT.WORK_DATE, 'YYYY-MM-DD')
+                            -- ABSENT .  ON NULL
+                        ) ORDER BY GRI_CUT.SEQ_NO    --- JDY CLOB RETURNING CLOB
+                    )  GRI_CUT_HIST
+                    FROM TL_GRADING_INFO GRI
+                    LEFT JOIN TL_GRADING_CUT_HIST GRI_CUT
+                        ON GRI_CUT.HATCHERY_ID = GRI.HATCHERY_ID AND GRI_CUT.EGG_RECEIVE_NO = GRI.EGG_RECEIVE_NO
+                    GROUP BY GRI.HATCHERY_ID, GRI.EGG_RECEIVE_NO
+            ) GRI_CUT ON GRI_CUT.HATCHERY_ID = GRI.HATCHERY_ID AND GRI_CUT.EGG_RECEIVE_NO = GRI.EGG_RECEIVE_NO
+            LEFT JOIN (  -- 부화장 setting
+                SELECT SETT.HATCHERY_ID SETT_HATCHERY_ID, SETT.EGG_RECEIVE_NO SETT_EGG_RECEIVE_NO
+                ,SUM(SETT.SETTING_QTY) SETT_SETTING_QTY
+                ,SUM(SETT.FERTILE_QTY) SETT_FERTILE_QTY
+                ,SUM(SETT.INFERTILE_QTY) SETT_INFERTILE_QTY
+                ,SUM(SETT.EXPLODE_QTY) SETT_EXPLODE_QTY
+                ,SUM(SETT_CUT.SETT_CUT_SETTING_QTY) SETT_CUT_SETTING_QTY
+                ,SUM(SETT_CUT.SETT_CUT_FERTILE_QTY) SETT_CUT_FERTILE_QTY
+                ,JSON_ARRAYAGG(
+                    JSON_OBJECT(
+                        'setting_seq' VALUE TO_CHAR(SETT.SETTING_SEQ)
+                        ,'setter_id' VALUE SETT.SETTER_ID
+                        ,'setting_date' VALUE TO_CHAR(SETT.SETTING_DATE, 'YYYY-MM-DD')
+                        ,'setting_qty' VALUE SETT.SETTING_QTY
+                        ,'candling_date' VALUE TO_CHAR(SETT.CANDLING_DATE, 'YYYY-MM-DD')
+                        ,'fertile_qty' VALUE SETT.FERTILE_QTY
+                        ,'infertile_qty' VALUE SETT.INFERTILE_QTY
+                        ,'explode_qty' VALUE SETT.EXPLODE_QTY
+                        ,'hatcher_id' VALUE SETT.HATCHER_ID
+                        ,'hatcher_status' VALUE SETT.HATCHER_STATUS
+                        ,'setting_rem' VALUE SETT.SETTING_REM
+                        ,'candling_rem' VALUE SETT.CANDLING_REM
+                        ,'cutting_hist' VALUE SETT_CUT.SETT_CUT_HIST
+                       ABSENT  ON NULL
+                    ) ORDER BY SETT.SETTING_SEQ
+                ) SETT_SETTING_DTL
+                FROM TL_SETTING_INFO SETT
+                LEFT JOIN ( -- 부화장 setting cutting
+                    SELECT
+                        SETT.HATCHERY_ID, SETT.EGG_RECEIVE_NO, SETT.SETTING_SEQ
+                        ,SUM(SETT_CUT.SETTING_QTY) SETT_CUT_SETTING_QTY
+                        ,SUM(SETT_CUT.FERTILE_QTY) SETT_CUT_FERTILE_QTY
+                        ,JSON_ARRAYAGG(
+                            JSON_OBJECT(
+                                'seq_no' VALUE TO_CHAR(SETT_CUT.SEQ_NO)
+                                ,'work_date' VALUE TO_CHAR(SETT_CUT.WORK_DATE, 'YYYY-MM-DD')
+                                ,'fertile' VALUE SETT_CUT.FERTILE_QTY
+                                ,'setting' VALUE SETT_CUT.SETTING_QTY
+                               ABSENT  ON NULL
+                            ) ORDER BY SETT_CUT.SEQ_NO
+                        ) SETT_CUT_HIST
+                    FROM TL_SETTING_INFO SETT
+                    LEFT JOIN TL_SETTER_CUT_HIST SETT_CUT
+                        ON SETT_CUT.HATCHERY_ID = SETT.HATCHERY_ID AND SETT_CUT.EGG_RECEIVE_NO = SETT.EGG_RECEIVE_NO
+                            AND SETT_CUT.SETTING_SEQ = SETT.SETTING_SEQ
+                    GROUP BY SETT.HATCHERY_ID, SETT.EGG_RECEIVE_NO, SETT.SETTING_SEQ
+                ) SETT_CUT ON SETT_CUT.HATCHERY_ID = SETT.HATCHERY_ID AND SETT_CUT.EGG_RECEIVE_NO = SETT.EGG_RECEIVE_NO
+                    AND SETT_CUT.SETTING_SEQ = SETT.SETTING_SEQ
+                GROUP BY SETT.HATCHERY_ID, SETT.EGG_RECEIVE_NO
+            ) SETT ON SETT.SETT_HATCHERY_ID = GRI.HATCHERY_ID AND  SETT.SETT_EGG_RECEIVE_NO = GRI.EGG_RECEIVE_NO
+            LEFT JOIN (  -- 부화장 부화정보
+                SELECT HATCHING.HATCHERY_ID HATCHING_HATCHERY_ID, HATCHING.EGG_RECEIVE_NO HATCHING_EGG_RECEIVE_NO
+                    ,SUM(HATCHING.DIS_QTY) HATCHING_DIS_QTY
+                    ,SUM(HATCHING.DEF_QTY) HATCHING_DEF_QTY
+                    ,SUM(HATCHING.BLOT_QTY) HATCHING_BLOT_QTY
+                    ,SUM(HATCHING.DEAD_QTY) HATCHING_DEAD_QTY
+                    ,SUM(HATCHING.OMPAL_QTY) HATCHING_OMPAL_QTY
+                    ,SUM(HATCHING.WEAK_QTY) HATCHING_WEAK_QTY
+                    ,SUM(HATCHING.PSDOC_F_QTY) HATCHING_PSDOC_F_QTY
+                    ,SUM(HATCHING.PSDOC_M_QTY) HATCHING_PSDOC_M_QTY
+                    ,SUM(HATCHING.SEX_QTY) HATCHING_SEX_QTY
+--
+                    ,SUM(HATCHING.SP_QTY) HATCHING_SP_QTY
+                    ,SUM(HATCHING.A2_QTY) HATCHING_A2_QTY
+                    ,SUM(HATCHING.A1_QTY) HATCHING_A1_QTY
+                    ,SUM(HATCHING.BM_QTY) HATCHING_BM_QTY
+                    ,SUM(HATCHING.B_QTY) HATCHING_B_QTY
+                    ,SUM(HATCHING.POLOS_QTY) HATCHING_POLOS_QTY
+--
+                    ,SUM(HATCHING_CUT.HATCHING_CUT_SP_QTY) HATCHING_CUT_SP_QTY
+                    ,SUM(HATCHING_CUT.HATCHING_CUT_A1_QTY) HATCHING_CUT_A1_QTY
+                    ,SUM(HATCHING_CUT.HATCHING_CUT_A2_QTY) HATCHING_CUT_A2_QTY
+                    ,SUM(HATCHING_CUT.HATCHING_CUT_BM_QTY) HATCHING_CUT_BM_QTY
+                    ,SUM(HATCHING_CUT.HATCHING_CUT_B_QTY) HATCHING_CUT_B_QTY
+                    ,SUM(HATCHING_CUT.HATCHING_CUT_POLOS_QTY) HATCHING_CUT_POLOS_QTY
+                    ,JSON_ARRAYAGG(
+                        JSON_OBJECT(
+                            'setting_seq' VALUE TO_CHAR(HATCHING.SETTING_SEQ)
+                            ,'hatch_date' VALUE TO_CHAR(HATCHING.HATCH_DATE, 'YYYY-MM-DD')
+                            ,'strain_code' VALUE HATCHING.STRAIN_CODE
+                            ,'dis' VALUE HATCHING.DIS_QTY
+                            ,'def' VALUE HATCHING.DEF_QTY
+                            ,'bloat' VALUE HATCHING.BLOT_QTY
+                            ,'dead' VALUE HATCHING.DEAD_QTY
+                            ,'ompal' VALUE HATCHING.OMPAL_QTY
+                            ,'weak' VALUE HATCHING.WEAK_QTY
+                            ,'psdoc_f' VALUE HATCHING.PSDOC_F_QTY
+                            ,'psdoc_m' VALUE HATCHING.PSDOC_M_QTY
+                            ,'sex' VALUE HATCHING.SEX_QTY
+                            ,'premium' VALUE HATCHING.SP_QTY
+                            ,'standard_2' VALUE HATCHING.A2_QTY
+                            ,'standard_1' VALUE HATCHING.A1_QTY
+                            ,'bm' VALUE HATCHING.BM_QTY
+                            ,'gradeb' VALUE HATCHING.B_QTY
+                            ,'polos' VALUE HATCHING.POLOS_QTY
+                            ,'remarks' VALUE HATCHING.REMARKS
+                            ,'cutting_hist' VALUE HATCHING_CUT.HATCHING_CUT_HIST
+                           ABSENT  ON NULL
+                        ) ORDER BY HATCHING.HATCH_DATE, HATCHING.HATCHERY_ID, HATCHING.EGG_RECEIVE_NO, HATCHING.SETTING_SEQ
+                    ) HATCHING_DTL
+                FROM TL_HATCHING_INFO HATCHING
+                LEFT JOIN ( -- 부화장 cutting 정보
+                    SELECT
+                        HATCHING.HATCHERY_ID, HATCHING.EGG_RECEIVE_NO, HATCHING.SETTING_SEQ
+                        ,SUM(HATCHING_CUT.SP_QTY) HATCHING_CUT_SP_QTY
+                        ,SUM(HATCHING_CUT.A1_QTY) HATCHING_CUT_A1_QTY
+                        ,SUM(HATCHING_CUT.A2_QTY) HATCHING_CUT_A2_QTY
+                        ,SUM(HATCHING_CUT.BM_QTY) HATCHING_CUT_BM_QTY
+                        ,SUM(HATCHING_CUT.B_QTY) HATCHING_CUT_B_QTY
+                        ,SUM(HATCHING_CUT.POLOS_QTY) HATCHING_CUT_POLOS_QTY
+                        ,JSON_ARRAYAGG(
+                            JSON_OBJECT(
+                                'seq_no' VALUE TO_CHAR(HATCHING_CUT.SEQ_NO)
+                                ,'work_date' VALUE TO_CHAR(HATCHING_CUT.WORK_DATE, 'YYYY-MM-DD')
+                                ,'premium' VALUE HATCHING_CUT.SP_QTY
+                                ,'standard_1' VALUE HATCHING_CUT.A1_QTY
+                                ,'standard_2' VALUE HATCHING_CUT.A2_QTY
+                                ,'bm' VALUE HATCHING_CUT.BM_QTY
+                                ,'gradeb' VALUE HATCHING_CUT.B_QTY
+                                ,'polos' VALUE HATCHING_CUT.POLOS_QTY
+                               ABSENT  ON NULL
+                            )
+                        ) HATCHING_CUT_HIST
+                        FROM TL_HATCHING_INFO HATCHING
+                        LEFT JOIN TL_HATCHING_CUT_HIST HATCHING_CUT
+                          ON HATCHING_CUT.HATCHERY_ID = HATCHING.HATCHERY_ID AND HATCHING_CUT.EGG_RECEIVE_NO = HATCHING.EGG_RECEIVE_NO
+                            AND HATCHING_CUT.SETTING_SEQ = HATCHING.SETTING_SEQ
+                        GROUP BY HATCHING.HATCHERY_ID, HATCHING.EGG_RECEIVE_NO, HATCHING.SETTING_SEQ
+                ) HATCHING_CUT ON HATCHING_CUT.HATCHERY_ID = HATCHING.HATCHERY_ID AND HATCHING_CUT.EGG_RECEIVE_NO = HATCHING.EGG_RECEIVE_NO
+                    AND HATCHING_CUT.SETTING_SEQ = HATCHING.SETTING_SEQ
+                GROUP BY HATCHING.HATCHERY_ID, HATCHING.EGG_RECEIVE_NO
+            ) HATCHING ON HATCHING.HATCHING_HATCHERY_ID = GRI.HATCHERY_ID
+                    AND HATCHING.HATCHING_EGG_RECEIVE_NO = GRI.EGG_RECEIVE_NO
+        WHERE ETM.TRANSFER_TYPE = 'T'   -- only to go hatchery
+        GROUP BY EGT.EP_DATE, EGT.FARM_CODE, EGT.FLOCK_ID, EGT.HH_ID
+) HATCHERY ON HATCHERY.EP_DATE = BR.WORK_DATE AND HATCHERY.FARM_CODE = BR.FARM_CODE
+        AND HATCHERY.FLOCK_ID = BR.FLOCK_ID AND HATCHERY.HH_ID = BR.HH_ID
+LEFT JOIN (  -- 부화일 기준 종란 생산일 추정 (부화일 기준 해당되는 여러 종란 생산일 중 최대 종란 생산일 에 해당하는 암, 수 개체수 추정 방법
+    SELECT
+        EP_DATE_BASE.EP_DATE, EP_DATE_BASE.MAX_EP_DATE, EP_DATE_BASE.HATCH_DATE, EP_DATE_BASE.FARM_CODE, EP_DATE_BASE.FLOCK_ID, EP_DATE_BASE.HH_ID
+        , HATCH_CURR.HATCH_BASE
+    FROM (  -- 종란 생산일 기준 데이터 생성
+        SELECT  DISTINCT HATCHING.HATCH_DATE, MAX(EGT.EP_DATE) OVER(PARTITION BY HATCHING.HATCH_DATE) MAX_EP_DATE , EGT.EP_DATE,
+                EGT.FARM_CODE, EGT.FLOCK_ID, EGT.HH_ID
+                     --  , EGT.TRANSFER_NO, HER.HATCHERY_ID, HER.EGG_RECEIVE_NO, HATCHING.SETTING_SEQ, EGT.EP_DATE
+        FROM TP_EGG_TRANSFER_EPDATE EGT
+        LEFT JOIN TL_HATCHING_EGG_RECV HER
+            ON EGT.FARM_CODE = HER.FARM_CODE AND EGT.FLOCK_ID = HER.FLOCK_ID AND EGT.HH_ID = HER.HH_ID
+            AND EGT.TRANSFER_NO = HER.TRANSFER_NO
+        LEFT JOIN TL_HATCHING_INFO HATCHING
+            ON HER.HATCHERY_ID = HATCHING.HATCHERY_ID AND HER.EGG_RECEIVE_NO = HATCHING.EGG_RECEIVE_NO
+        ORDER BY EGT.EP_DATE
+    ) EP_DATE_BASE
+    LEFT JOIN ( -- 부화일 기준 연결 종란 생산시점 암 수 개체 수 계산
+        SELECT HATCH_CURR.MAX_EP_DATE, HATCH_CURR.FARM_CODE, HATCH_CURR.FLOCK_ID, HATCH_CURR.HH_ID
+            ,JSON_ARRAYAGG(
+                JSON_OBJECT (
+                    'hatch_date' VALUE TO_CHAR(HATCH_CURR.HATCH_DATE, 'YYYY-MM-DD')
+                    ,'max_ep_date' VALUE TO_CHAR(HATCH_CURR.MAX_EP_DATE, 'YYYY-MM-DD')
+                    ,'ep_date' VALUE TO_CHAR(HATCH_CURR.EP_DATE, 'YYYY-MM-DD')
+                    ,'is_max' VALUE (
+                        CASE WHEN HATCH_CURR.EP_DATE = HATCH_CURR.MAX_EP_DATE THEN 'true' ELSE 'false' END
+                    ) FORMAT JSON
+                    ,'female' VALUE HATCH_CURR.FEMALE
+                    ,'male' VALUE HATCH_CURR.MALE
+                ) ORDER BY HATCH_CURR.HATCH_DATE, HATCH_CURR.MAX_EP_DATE, HATCH_CURR.EP_DATE
+                ABSENT ON NULL
+            ) HATCH_BASE
+        FROM ( -- 종란 생산일 시점 암 수 개체수 계산
+            SELECT CURR.WORK_DATE, CURR.FARM_CODE, CURR.FLOCK_ID, CURR.HH_ID
+                ,CURR.FEMALE, CURR.MALE, CURR.FEMALE + CURR.MALE AS TOTAL
+                ,MAX_EP_DATE.HATCH_DATE, MAX_EP_DATE.MAX_EP_DATE, MAX_EP_DATE.EP_DATE
+                ,CASE WHEN MAX_EP_DATE.MAX_EP_DATE = CURR.WORK_DATE THEN 'true' ELSE 'false' END IS_MAX
+            FROM (
+                SELECT
+                    BRI.WORK_DATE,BRI.FARM_CODE, BRI.FLOCK_ID, BRI.HH_ID
+                    ,HHI.CHICKIN_QTY_F + NVL(MOI.MOVE_IN_ACC_F, 0) - NVL(MOI.MOVE_OUT_ACC_F, 0) -
+                        SUM(BRI.DEATH_QTY_F + BRI.CULLING_QTY_F) OVER(PARTITION BY BRI.FARM_CODE, BRI.FLOCK_ID, BRI.HH_ID ORDER BY BRI.WORK_DATE) FEMALE
+                    ,HHI.CHICKIN_QTY_M + NVL(MOI.MOVE_IN_ACC_M, 0) - NVL(MOI.MOVE_OUT_ACC_M, 0) -
+                        SUM(BRI.DEATH_QTY_M + BRI.CULLING_QTY_M) OVER(PARTITION BY BRI.FARM_CODE, BRI.FLOCK_ID, BRI.HH_ID ORDER BY BRI.WORK_DATE) MALE
+                FROM TP_BREED_LOG BRI
+                LEFT JOIN TP_HH_CHICKIN HHI ON HHI.FARM_CODE = BRI.FARM_CODE AND HHI.FLOCK_ID = BRI.FLOCK_ID AND HHI.HH_ID = BRI.HH_ID
+                LEFT JOIN (  -- move_hist
+                    SELECT
+                        MO.MOVE_DATE,MO.FARM_CODE ,MO.FLOCK_ID, MO.HH_ID
+                        ,SUM(MO.MOVE_IN_DS_F)  OVER(PARTITION BY MO.FARM_CODE ,MO.FLOCK_ID, MO.HH_ID ORDER BY MO.MOVE_DATE) MOVE_IN_ACC_F
+                        ,SUM(MO.MOVE_OUT_DS_F) OVER(PARTITION BY MO.FARM_CODE ,MO.FLOCK_ID, MO.HH_ID ORDER BY MO.MOVE_DATE) MOVE_OUT_ACC_F
+                        ,SUM(MO.MOVE_IN_DS_M)  OVER(PARTITION BY MO.FARM_CODE ,MO.FLOCK_ID, MO.HH_ID ORDER BY MO.MOVE_DATE) MOVE_IN_ACC_M
+                        ,SUM(MO.MOVE_OUT_DS_M) OVER(PARTITION BY MO.FARM_CODE ,MO.FLOCK_ID, MO.HH_ID ORDER BY MO.MOVE_DATE) MOVE_OUT_ACC_M
+                    FROM (
+                        SELECT
+                            MO.MOVE_DATE,MO.FARM_CODE ,MO.FLOCK_ID, MO.HH_ID
+                            ,SUM(MO.MOVE_IN_F) MOVE_IN_DS_F, SUM(MO.MOVE_OUT_F) MOVE_OUT_DS_F, SUM(MO.MOVE_IN_M) MOVE_IN_DS_M, SUM(MO.MOVE_OUT_M) MOVE_OUT_DS_M
+                        FROM (
+                            SELECT MOVE_DATE,FARM_CODE ,FLOCK_ID,HH_ID, SEQ_NO
+                                ,CASE WHEN MOVE_QTY_F >= 0 THEN MOVE_QTY_F ELSE 0 END MOVE_IN_F
+                                ,CASE WHEN MOVE_QTY_F < 0 THEN MOVE_QTY_F * -1 ELSE 0 END MOVE_OUT_F
+                                ,CASE WHEN MOVE_QTY_M >= 0 THEN MOVE_QTY_M ELSE 0 END MOVE_IN_M
+                                ,CASE WHEN MOVE_QTY_M < 0 THEN MOVE_QTY_M * -1 ELSE 0 END MOVE_OUT_M
+                            FROM TP_HH_MOVE_HIST
+                            ORDER BY MOVE_DATE, FARM_CODE, FLOCK_ID, HH_ID, SEQ_NO
+                        ) MO
+                        GROUP BY MO.MOVE_DATE, MO.FARM_CODE, MO.FLOCK_ID, MO.HH_ID
+                        ORDER BY MO.MOVE_DATE, MO.FARM_CODE, MO.FLOCK_ID, MO.HH_ID
+                    ) MO ORDER BY MO.MOVE_DATE, MO.FARM_CODE, MO.FLOCK_ID, MO.HH_ID
+                )  MOI ON MOI.MOVE_DATE = BRI.WORK_DATE  AND MOI.FARM_CODE = BRI.FARM_CODE
+                    AND MOI.FLOCK_ID = BRI.FLOCK_ID AND MOI.HH_ID = BRI.HH_ID
+            ) CURR
+            INNER JOIN ( -- 부화일 기준 정보 계산
+                SELECT  DISTINCT HATCHING.HATCH_DATE, MAX(EGT.EP_DATE) OVER(PARTITION BY HATCHING.HATCH_DATE) MAX_EP_DATE
+                    ,EGT.EP_DATE, EGT.FARM_CODE, EGT.FLOCK_ID, EGT.HH_ID
+                     --  , EGT.TRANSFER_NO, HER.HATCHERY_ID, HER.EGG_RECEIVE_NO, HATCHING.SETTING_SEQ, EGT.EP_DATE
+                FROM TP_EGG_TRANSFER_EPDATE EGT
+                LEFT JOIN TL_HATCHING_EGG_RECV HER
+                    ON EGT.FARM_CODE = HER.FARM_CODE AND EGT.FLOCK_ID = HER.FLOCK_ID
+                    AND EGT.HH_ID = HER.HH_ID AND EGT.TRANSFER_NO = HER.TRANSFER_NO
+                LEFT JOIN TL_HATCHING_INFO HATCHING
+                    ON HER.HATCHERY_ID = HATCHING.HATCHERY_ID AND HER.EGG_RECEIVE_NO = HATCHING.EGG_RECEIVE_NO
+            ) MAX_EP_DATE
+                ON MAX_EP_DATE.EP_DATE = CURR.WORK_DATE AND MAX_EP_DATE.FARM_CODE=CURR.FARM_CODE
+                AND MAX_EP_DATE.FLOCK_ID=CURR.FLOCK_ID AND MAX_EP_DATE.HH_ID=CURR.HH_ID
+        ) HATCH_CURR
+        WHERE HATCH_CURR.HATCH_DATE IS NOT NULL
+        GROUP BY HATCH_CURR.MAX_EP_DATE, HATCH_CURR.FARM_CODE, HATCH_CURR.FLOCK_ID, HATCH_CURR.HH_ID
+        ORDER BY HATCH_CURR.MAX_EP_DATE
+    ) HATCH_CURR ON EP_DATE_BASE.MAX_EP_DATE = HATCH_CURR.MAX_EP_DATE AND EP_DATE_BASE.FARM_CODE = HATCH_CURR.FARM_CODE
+        AND EP_DATE_BASE.FLOCK_ID = HATCH_CURR.FLOCK_ID AND EP_DATE_BASE.HH_ID = HATCH_CURR.HH_ID
+) HATCH_CURR ON BR.WORK_DATE = HATCH_CURR.EP_DATE AND BR.FARM_CODE = HATCH_CURR.FARM_CODE
+    AND BR.FLOCK_ID = HATCH_CURR.FLOCK_ID AND BR.HH_ID = HATCH_CURR.HH_ID
+--
+--   기간 설정을 이것으로 하세요 
+--    WHERE BR.WORK_DATE BETWEEN TO_DATE('2019-12-04', 'YYYY-MM-DD') AND TO_DATE('2019-12-07', 'YYYY-MM-DD')
+--  D.JUNG
+--    WHERE EP.EP_DATE IS NOT NULL
+--     WHERE BR.WORK_DATE >= TO_DATE('2019-01-29', 'YYYY-MM-DD') --AND HATCHING.HATCH_DATE IS NOT NULL
+--     WHERE HATCHING.HATCH_DATE IS NOT NULL
+    ORDER BY BR.WORK_DATE, BR.FARM_CODE, BR.FLOCK_ID, BR.HH_ID
+--    fetch first 1000 rows only
+    ]]>
+    </select>
+</mapper>

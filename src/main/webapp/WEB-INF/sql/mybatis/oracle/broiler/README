@@ -1,0 +1,7 @@
+// Broiler
+$SH_ROOT/bin/ezfarmsql_cl.sh $SH_ROOT/sql/curl/etl_broiler_for_curl.sql | sed -e  's/||/\n/g' | tr -d '\t' > $DATA_PATH/etl_broiler_1_$RUN_DATE.json
+$SH_ROOT/bin/ezfarmsql_cl.sh $SH_ROOT/sql/curl/etl_broiler_std_1.sql | sed -e  's/||/\n/g' | tr -d '\t' > $DATA_PATH/etl_broiler_std_1_$RUN_DATE.json
+$SH_ROOT/bin/ezfarmsql_cl.sh $SH_ROOT/sql/curl/etl_broiler_std_2.sql | sed -e  's/||/\n/g' | tr -d '\t' > $DATA_PATH/etl_broiler_std_2_$RUN_DATE.json
+$SH_ROOT/bin/ezfarmsql_cl.sh $SH_ROOT/sql/curl/etl_broiler_std_3.sql | sed -e  's/||/\n/g' | tr -d '\t' > $DATA_PATH/etl_broiler_std_3_$RUN_DATE.json
+$SH_ROOT/bin/ezfarmsql_cl.sh $SH_ROOT/sql/curl/etl_broiler_std_4.sql | sed -e  's/||/\n/g' | tr -d '\t' > $DATA_PATH/etl_broiler_std_4_$RUN_DATE.json
+$SH_ROOT/bin/ezfarmsql_cl.sh $SH_ROOT/sql/curl/etl_broiler_std_5.sql | sed -e  's/||/\n/g' | tr -d '\t' > $DATA_PATH/etl_broiler_std_5_$RUN_DATE.json

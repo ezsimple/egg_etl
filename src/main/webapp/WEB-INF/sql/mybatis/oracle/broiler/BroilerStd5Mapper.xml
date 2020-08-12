@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="newegg.broiler.std5">
+    <select id="etlQuery" parameterType="QueryMap" resultType="QueryMap" >
+    <![CDATA[ 
+SELECT
+--   COUNT(*) OVER()
+--  ,BL.FARM_CODE
+--  ,BL.PROJ_CODE
+--  ,TO_CHAR(BL.WORK_DATE, 'YYYY-MM-DD')
+--  ,TO_CHAR(ROUND((BL.DEATH_QTY + BL.CULLING_QTY) / RE.RECV_QTY, 4) * 100,'FM9999990.00')
+--  SUM(RE.RECV_QTY) OVER(PARTITION BY BL.FARM_CODE, BL.PROJ_CODE ORDER BY BL.WORK_DATE) popcum
+--  RE.RECV_QTY - SUM(BL.DEATH_QTY) OVER(PARTITION BY BL.FARM_CODE, BL.PROJ_CODE ORDER BY BL.WORK_DATE)
+--  - SUM(BL.CULLING_QTY) OVER(PARTITION BY BL.FARM_CODE, BL.PROJ_CODE ORDER BY BL.WORK_DATE)
+--  - SUM(BL.TRANSFER_QTY) OVER(PARTITION BY BL.FARM_CODE, BL.PROJ_CODE ORDER BY BL.WORK_DATE) curr
+--  ,RE.RECV_QTY input
+--  ,SUM(BL.DEATH_QTY) OVER(PARTITION BY BL.FARM_CODE, BL.PROJ_CODE ORDER BY BL.WORK_DATE) death
+--  ,SUM(BL.CULLING_QTY) OVER(PARTITION BY BL.FARM_CODE, BL.PROJ_CODE ORDER BY BL.WORK_DATE) cull
+--  ,SUM(BL.TRANSFER_QTY) OVER(PARTITION BY BL.FARM_CODE, BL.PROJ_CODE ORDER BY BL.WORK_DATE) sales
+  JSON_OBJECT(
+     'update' VALUE JSON_OBJECT(
+        '_index' VALUE 'cj-chickenfarm-broiler-idx'
+       ,'_id' VALUE TO_CHAR(BL.WORK_DATE, 'YYYY-MM-DD') || 'broiler' || BL.FARM_CODE || BL.PROJ_CODE
+     )
+  ) INDEX_META
+  ,JSON_OBJECT(
+    'doc' VALUE JSON_OBJECT(
+        'doc_key' VALUE (
+            TO_CHAR(BL.WORK_DATE, 'YYYY-MM-DD') || 'broiler' || BL.FARM_CODE || BL.PROJ_CODE 
+        ) 
+        ,'std_ip_list' VALUE(
+          SELECT 
+            JSON_ARRAYAGG(
+                JSON_OBJECT(
+                    'age' VALUE STD.AGE
+                    ,'value' VALUE STD.IP
+                    ,'on_day' VALUE CASE WHEN STD.AGE = BL.AGE_DAY THEN 'true' ELSE 'false' END FORMAT JSON
+                    ,'age_day' VALUE BL.AGE_DAY
+                    ABSENT ON NULL
+                ) ORDER BY STD.AGE
+            )
+          FROM TC_STANDARD_MAST STM
+            LEFT JOIN TC_STANDARD_DTL STD ON STM.STANDARD_ID = STD.STANDARD_ID
+          WHERE 
+            STM.ACTIVE_DATE IN (
+              SELECT MAX(STM_D.ACTIVE_DATE) FROM TC_STANDARD_MAST STM_D 
+                WHERE STM_D.ACTIVE_DATE <= BL.WORK_DATE
+                  GROUP BY STM_D.FARM_CLASS, STM_D.STRAIN_CODE, STM_D.BREEDING_TYPE
+            ) AND STM.COUNTRY_CODE = (SELECT FM.COUNTRY_CODE FROM TC_FARM_INFO FM WHERE FM.FARM_CODE = BL.FARM_CODE) 
+              AND STM.FARM_CLASS=FA.FARM_CLASS
+              AND STM.STRAIN_CODE=PR.STRAIN_CODE 
+              AND STM.BREEDING_TYPE = 'G'
+              AND STD.AGE <= 65 
+            GROUP BY STD.COUNTRY_CODE,STD.STANDARD_ID        
+        )
+       ABSENT  ON NULL 
+), 'doc_as_upsert' VALUE 'true' FORMAT JSON) cj_std_info   
+  FROM (
+    SELECT BL.*
+      ,TRUNC(BL.AGE_DAY /7) + 1 AGE_WEEK
+      ,BL.WORK_DATE + 6 AGE_WEEK_LAST_DAY 
+    FROM TB_BROILER_LOG BL
+  ) BL LEFT JOIN TC_FARM_INFO FA ON FA.FARM_CODE = BL.FARM_CODE
+  LEFT JOIN TB_PROJECT_INFO PR ON PR.FARM_CODE = BL.FARM_CODE AND PR.PROJ_CODE = BL.PROJ_CODE
+  LEFT JOIN TB_RECEIVE_INFO RE ON RE.FARM_CODE = BL.FARM_CODE AND RE.PROJ_CODE = BL.PROJ_CODE
+      AND RE.RECEIVE_DATE <= BL.WORK_DATE
+  LEFT JOIN TC_HATCHERY_INFO HA ON HA.HATCHERY_ID = RE.HATCHERY_ID
+  LEFT JOIN TC_CUSTOMER CU ON CU.CUSTOMER_CODE = RE.CUSTOMER_CODE
+  LEFT JOIN (                                           -- FEED_INFO
+    SELECT 
+         FE.WORK_DATE FEED_DATE
+        ,FE.FARM_CODE
+        ,FE.PROJ_CODE
+        ,SUM(FE.USE_AMT)  TOTAL_USE_AMT     -- KG unit
+        ,JSON_OBJECT(
+           'feed_date' VALUE TO_CHAR(FE.WORK_DATE, 'YYYY-MM-DD')
+          ,'feed_hist' VALUE (
+               JSON_ARRAYAGG(
+                 JSON_OBJECT(
+                   'feed' VALUE JSON_OBJECT(
+                       'seq_no' VALUE FE.SEQ_NO
+                      ,'code' VALUE FE.FEED_CODE
+                      ,'name' VALUE MA.MATERIAL_NAME
+                      ,'using' VALUE MA.USING_CLASS
+                      ,'using_name' VALUE CD.CODE_STEXT
+                      ,'use_amount' VALUE FE.USE_AMT * 1000
+                  )
+                 ) ORDER BY FE.SEQ_NO
+              ) 
+          )
+          ABSENT ON NULL
+        ) FEED_HIST
+        FROM TB_BROILER_LOG_FEED FE
+            LEFT JOIN TC_MATERIAL_INFO MA
+              ON FE.FEED_CODE = MA.MATERIAL_CODE
+            LEFT JOIN TC_FARM_INFO FA
+              ON FE.FARM_CODE = FA.FARM_CODE
+            LEFT JOIN TC_CODE_DTL CD
+              ON CD.COUNTRY_CODE = FA.COUNTRY_CODE
+                  AND CD.CODE_ID = 'EP22'
+                  AND CD.CODE_VALUE = MA.USING_CLASS 
+            GROUP BY FE.WORK_DATE, FE.FARM_CODE, FE.PROJ_CODE
+      ) FEH ON FEH.FEED_DATE = BL.WORK_DATE
+                AND FEH.FARM_CODE = BL.FARM_CODE 
+                AND FEH.PROJ_CODE = BL.PROJ_CODE
+  LEFT JOIN (    -- TP_BREED_LOG_MED
+    SELECT 
+       MED.WORK_DATE MED_DATE			                                -- 작업 일자 / Work Date
+      ,MED.FARM_CODE				                                -- 농장코드 / Farm Code국가(1) + 축종(1) + Type(1) + 지역(3) + Serial(3) 축종 : Code ID EP23 Type : Code ID EP24
+      ,MED.PROJ_CODE			                                -- 계군 ID/ Flock ID계군 입식시 자체 생성품종(2) + 년도(2) + 농장약어코드(4) + Serial(5)Flock ID 생성 Function : FN_NEW_FLOCK_ID(품종(2), 년도(2), 농장약어코드(4))
+      ,JSON_ARRAYAGG(
+        JSON_OBJECT(
+           'seq_no' VALUE MED.SEQ_NO
+          ,'code' VALUE MED.MEDICINE_CODE
+          ,'name' VALUE MA.MATERIAL_NAME
+          ,'using' VALUE MA.USING_CLASS
+          ,'using_name' VALUE CD.CODE_STEXT
+          ,'amount' VALUE MED.USE_AMT
+          ,'unit' VALUE MA.UNIT
+        )
+    )  MEDI_HIST -- JSON_ARRAY
+      FROM TB_BROILER_LOG_MED MED
+          LEFT JOIN TC_MATERIAL_INFO MA
+            ON MED.MEDICINE_CODE = MA.MATERIAL_CODE
+          LEFT JOIN TC_CODE_DTL CD
+            ON CD.COUNTRY_CODE = (SELECT FM.COUNTRY_CODE FROM TC_FARM_INFO FM WHERE FM.FARM_CODE = MED.FARM_CODE)
+                AND CD.CODE_ID = 'EP22'
+                AND CD.CODE_VALUE = MA.USING_CLASS
+          GROUP BY MED.WORK_DATE, MED.FARM_CODE, MED.PROJ_CODE
+  ) MED ON MED.MED_DATE = BL.WORK_DATE
+             AND MED.FARM_CODE = BL.FARM_CODE 
+             AND MED.PROJ_CODE = BL.PROJ_CODE
+  LEFT JOIN (    -- VAC_HIST
+    SELECT 
+       VAC.WORK_DATE	VAC_DATE			                                -- 작업 일자 / Work Date
+      ,VAC.FARM_CODE				                                -- 농장코드 / Farm Code국가(1) + 축종(1) + Type(1) + 지역(3) + Serial(3) 축종 : Code ID EP23 Type : Code ID EP24
+      ,VAC.PROJ_CODE				                                -- 계군 ID/ Flock ID계군 입식시 자체 생성품종(2) + 년도(2) + 농장약어코드(4) + Serial(5)Flock ID 생성 Function : FN_NEW_FLOCK_ID(품종(2), 년도(2), 농장약어코드(4))
+      ,JSON_ARRAYAGG(
+        JSON_OBJECT(
+           'seq_no' VALUE VAC.SEQ_NO
+          ,'code' VALUE VAC.VACCINE_CODE
+          ,'name' VALUE MA.MATERIAL_NAME
+          ,'using' VALUE MA.USING_CLASS
+          ,'using_name' VALUE CD.CODE_STEXT
+          ,'amount' VALUE VAC.USE_AMT
+          ,'unit' VALUE MA.UNIT
+        )
+    )  VAC_HIST -- JSON_ARRAY
+      FROM TB_BROILER_LOG_VAC VAC
+          LEFT JOIN TC_MATERIAL_INFO MA
+            ON VAC.VACCINE_CODE = MA.MATERIAL_CODE
+          LEFT JOIN TC_CODE_DTL CD
+            ON CD.COUNTRY_CODE = (SELECT FM.COUNTRY_CODE FROM TC_FARM_INFO FM WHERE FM.FARM_CODE = VAC.FARM_CODE)
+                AND CD.CODE_ID = 'EP22'
+                AND CD.CODE_VALUE = MA.USING_CLASS
+          GROUP BY VAC.WORK_DATE, VAC.FARM_CODE, VAC.PROJ_CODE
+  ) VAC ON VAC.VAC_DATE = BL.WORK_DATE
+             AND VAC.FARM_CODE = BL.FARM_CODE 
+             AND VAC.PROJ_CODE = BL.PROJ_CODE
+  LEFT JOIN (
+     SELECT 
+         TDT.FARM_CODE				                        -- 농장코드 / Farm Code 국가(1) + 축종(1) + Type(1) + 지역(3) + Serial(3)  축종 : Code ID EP23  Type : Code ID EP24
+        ,TDT.PROJ_CODE				                        -- 프로젝트 코드 / Project Code
+        ,TDT.WORK_DATE	SALES_DATE			                        -- 작업 일자 / Work Date
+        ,MAX(TDT.WORK_DATE) OVER(PARTITION BY TDT.FARM_CODE, TDT.PROJ_CODE ORDER BY TDT.PROJ_CODE) E_WORK_DATE
+        ,MIN(TDT.WORK_DATE) OVER(PARTITION BY TDT.FARM_CODE, TDT.PROJ_CODE ORDER BY TDT.PROJ_CODE) S_WORK_DATE
+        ,JSON_ARRAYAGG(
+          JSON_OBJECT(
+              'seq_no' VALUE TDT.SEQ_NO
+             ,'s_order_no' VALUE TDT.S_ORDER_NO
+             ,'customer' VALUE JSON_OBJECT(
+                  'code' VALUE TDT.CUSTOMER_CODE
+                 ,'name' VALUE CU.CUSTOMER_NAME
+                 ,'short_name' VALUE CU.CUSTOMER_SHORT_NAME
+                 ,'kind' VALUE CU.CUSTOMER_KIND
+                 ,'kind_name' VALUE(
+                      SELECT DT.CODE_STEXT FROM TC_CODE_DTL DT
+                          WHERE DT.COUNTRY_CODE = (SELECT FM.COUNTRY_CODE FROM TC_FARM_INFO FM WHERE FM.FARM_CODE = TDT.FARM_CODE)
+                          AND DT.CODE_ID = 'EP01' AND DT.CODE_VALUE = CU.CUSTOMER_KIND
+                 )
+                 ABSENT ON NULL
+             )
+             ,'culling_qty' VALUE TDT.CULLING_QTY
+             ,'culling_weight' VALUE TDT.CULLING_WEIGHT
+             ,'harvest_qty' VALUE TDT.HARVEST_QTY
+             ,'harvest_weight' VALUE TDT.HARVEST_WEIGHT
+             ,'truck_no' VALUE TDT.TRUCK_NO
+             ,'remakrs' VALUE TRIM(TDT.REMARKS)
+            ABSENT ON NULL
+          )
+          ABSENT ON NULL
+        )  TDT_DTL -- JSON_ARRAY
+        FROM TB_TRANSFER_DTL TDT
+            LEFT JOIN TC_CUSTOMER CU ON CU.CUSTOMER_CODE = TDT.CUSTOMER_CODE
+            GROUP BY TDT.WORK_DATE, TDT.FARM_CODE, TDT.PROJ_CODE
+        ORDER BY TDT.WORK_DATE
+  ) SDTL ON SDTL.SALES_DATE = BL.WORK_DATE 
+          AND SDTL.FARM_CODE = BL.FARM_CODE AND SDTL.PROJ_CODE = BL.PROJ_CODE
+--
+--     WHERE BL.FARM_CODE='F97RA600' AND BL.PROJ_CODE='20191216PJ0044' 
+  --
+  ORDER BY BL.WORK_DATE
+    ]]>
+    </select>
+</mapper>

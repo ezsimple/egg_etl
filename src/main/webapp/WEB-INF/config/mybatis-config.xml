@@ -16,7 +16,7 @@
   <typeAliases>
 
     <!-- Common -->
-    <typeAlias type="newegg.utils.QueryMap" alias="QueryMap" /> 
+    <typeAlias type="io.mkeasy.utils.QueryMap" alias="QueryMap" /> 
 
   </typeAliases>
 

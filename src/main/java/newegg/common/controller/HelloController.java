@@ -75,12 +75,14 @@ class HelloController {
 		Request req = new Request(method, endpoint);
 		req.setJsonEntity(bulkStr.toString());
 		Response response = restClient.performRequest(req);
+
 		String res = (EntityUtils.toString(response.getEntity()));
-		JSONObject object = new JSONObject(res);
-		log.debug("ES Result : {}", object.toString(2));
-		
-		String isOk = (boolean) object.get("errors") == false ? "success": "fail";
-		return isOk;
+
+		// JSONObject object = new JSONObject(res);
+		// log.debug("ES Result : {}", object.toString(2));
+		// String isOk = (boolean) object.get("errors") == false ? "success": "fail";
+
+		return res;
 	}
 
 }

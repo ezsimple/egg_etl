@@ -34,12 +34,12 @@ public class BroilerStd4ServiceImpl extends AbstractEtlService {
 	public String post(CommandMap commandMap) throws Exception {
 
 		// Mandatory - RDB 
-		String ns = "";
-		String nsId = "";
+		String ns = "newegg.broiler.std4";
+		String nsId = "etlQuery";
 
 		// Mandatory - ES Bulk 
-		String index_meta = "";
-		String field_name = "";
+		String index_meta = "index_meta";
+		String field_name = "cj-chickenfarm-broiler-idx";
 		QueryMap queryMap = new QueryMap();
 
 		// 1. Extract&Transfer From RDB
@@ -55,10 +55,10 @@ public class BroilerStd4ServiceImpl extends AbstractEtlService {
 
 		// 3. Check Response
 		String res = (EntityUtils.toString(response.getEntity()));
-		JSONObject object = new JSONObject(res);
-		log.debug("ES Result : {}", object.toString(2));
+		// JSONObject object = new JSONObject(res);
+		// log.debug("ES Result : {}", object.toString(2));
 		
-		return object.toString(2);
+		return res;
 	}
 
 }

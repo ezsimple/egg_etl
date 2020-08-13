@@ -4,7 +4,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="newegg.broiler.main">
-    <select id="etlBroilerMain" parameterType="QueryMap" resultType="QueryMap" >
+    <select id="etlQuery" parameterType="QueryMap" resultType="QueryMap" >
     <![CDATA[ 
 SELECT
 --   COUNT(*) OVER()

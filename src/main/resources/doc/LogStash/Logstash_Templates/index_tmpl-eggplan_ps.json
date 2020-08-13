@@ -1,0 +1,2893 @@
+{
+  "properties": {
+    "country": {
+      "properties": {
+        "code": {
+          "type": "keyword"
+        },
+        "iso": {
+          "copy_to": [
+            "fullsearch"
+          ],
+          "type": "keyword"
+        },
+        "timezone": {
+          "copy_to": [
+            "fullsearch"
+          ],
+          "type": "text"
+        },
+        "name": {
+          "copy_to": [
+            "fullsearch"
+          ],
+          "type": "text"
+        },
+        "language": {
+          "type": "text"
+        }
+      }
+    },
+    "flock": {
+      "properties": {
+        "chickin_date": {
+          "format": "yyyyMMddHHmmss||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||strict_date_optional_time||epoch_millis",
+          "type": "date"
+        },
+        "strain": {
+          "properties": {
+            "code": {
+              "fields": {
+                "ngram": {
+                  "search_analyzer": "standard",
+                  "analyzer": "ngram_analyzer",
+                  "type": "text"
+                }
+              },
+              "type": "keyword"
+            },
+            "name": {
+              "copy_to": [
+                "fullsearch"
+              ],
+              "search_analyzer": "standard",
+              "analyzer": "edgengram_analyzer",
+              "fields": {
+                "ko": {
+                  "search_analyzer": "standard",
+                  "analyzer": "nori_analyzer",
+                  "type": "text"
+                },
+                "th": {
+                  "search_analyzer": "standard",
+                  "analyzer": "thai",
+                  "type": "text"
+                },
+                "en": {
+                  "search_analyzer": "standard",
+                  "analyzer": "english",
+                  "type": "text"
+                },
+                "cn": {
+                  "search_analyzer": "standard",
+                  "analyzer": "smartcn",
+                  "type": "text"
+                },
+                "id": {
+                  "search_analyzer": "standard",
+                  "analyzer": "indonesian",
+                  "type": "text"
+                }
+              },
+              "type": "text"
+            }
+          }
+        },
+        "closing_date": {
+          "null_value": "NULL",
+          "format": "yyyyMMddHHmmss||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||strict_date_optional_time||epoch_millis",
+          "ignore_malformed": true,
+          "type": "date"
+        },
+        "closed_date": {
+          "null_value": "NULL",
+          "format": "yyyyMMddHHmmss||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||strict_date_optional_time||epoch_millis",
+          "ignore_malformed": true,
+          "type": "date"
+        },
+        "moveout": {
+          "properties": {
+            "total": {
+              "type": "long"
+            },
+            "female": {
+              "type": "long"
+            },
+            "male": {
+              "type": "long"
+            }
+          }
+        },
+        "laying_sdate": {
+          "null_value": "NULL",
+          "format": "yyyyMMddHHmmss||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||strict_date_optional_time||epoch_millis",
+          "ignore_malformed": true,
+          "type": "date"
+        },
+        "movein": {
+          "properties": {
+            "total": {
+              "type": "long"
+            },
+            "female": {
+              "type": "long"
+            },
+            "male": {
+              "type": "long"
+            }
+          }
+        },
+        "chickin": {
+          "properties": {
+            "total": {
+              "type": "long"
+            },
+            "female": {
+              "type": "long"
+            },
+            "male": {
+              "type": "long"
+            }
+          }
+        },
+        "status_name": {
+          "copy_to": [
+            "fullsearch"
+          ],
+          "type": "text"
+        },
+        "chickout": {
+          "properties": {
+            "total": {
+              "type": "long"
+            },
+            "female": {
+              "type": "long"
+            },
+            "male": {
+              "type": "long"
+            }
+          }
+        },
+        "flock_id": {
+          "fields": {
+            "ngram": {
+              "search_analyzer": "standard",
+              "analyzer": "ngram_analyzer",
+              "type": "text"
+            }
+          },
+          "type": "keyword"
+        },
+        "flock_in": {
+          "properties": {
+            "total": {
+              "type": "long"
+            },
+            "female": {
+              "type": "long"
+            },
+            "male": {
+              "type": "long"
+            }
+          }
+        },
+        "create_date": {
+          "format": "yyyyMMddHHmmss||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||strict_date_optional_time||epoch_millis",
+          "type": "date"
+        },
+        "breeding": {
+          "properties": {
+            "code": {
+              "type": "keyword"
+            },
+            "name": {
+              "copy_to": [
+                "fullsearch"
+              ],
+              "type": "text"
+            }
+          }
+        },
+        "status": {
+          "type": "keyword"
+        }
+      }
+    },
+    "std_dep_f_list": {
+      "type": "nested",
+      "properties": {
+        "on_day": {
+          "type": "boolean"
+        },
+        "age_week": {
+          "type": "integer"
+        },
+        "value": {
+          "type": "float"
+        },
+        "age": {
+          "type": "integer"
+        }
+      }
+    },
+    "info_type": {
+      "copy_to": [
+        "fullsearch"
+      ],
+      "type": "keyword"
+    },
+    "std_egg_weight_list": {
+      "type": "nested",
+      "properties": {
+        "on_day": {
+          "type": "boolean"
+        },
+        "age_week": {
+          "type": "integer"
+        },
+        "value": {
+          "type": "float"
+        },
+        "age": {
+          "type": "integer"
+        }
+      }
+    },
+    "hatch_base": {
+      "type": "nested",
+      "properties": {
+        "is_max": {
+          "type": "boolean"
+        },
+        "max_ep_date": {
+          "format": "yyyyMMddHHmmss||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||strict_date_optional_time||epoch_millis",
+          "type": "date"
+        },
+        "hatch_date": {
+          "format": "yyyyMMddHHmmss||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||strict_date_optional_time||epoch_millis",
+          "type": "date"
+        },
+        "female": {
+          "type": "long"
+        },
+        "male": {
+          "type": "long"
+        },
+        "ep_date": {
+          "format": "yyyyMMddHHmmss||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||strict_date_optional_time||epoch_millis",
+          "type": "date"
+        }
+      }
+    },
+    "setting": {
+      "properties": {
+        "fertile": {
+          "type": "long"
+        },
+        "setting_dtl": {
+          "type": "nested",
+          "properties": {
+            "setting_sub_dtl": {
+              "type": "nested",
+              "properties": {
+                "infertile_qty": {
+                  "type": "long"
+                },
+                "seq_no": {
+                  "type": "keyword"
+                },
+                "explode_qty": {
+                  "type": "long"
+                },
+                "setter_id": {
+                  "fields": {
+                    "ngram": {
+                      "search_analyzer": "standard",
+                      "analyzer": "ngram_analyzer",
+                      "type": "text"
+                    }
+                  },
+                  "type": "keyword"
+                },
+                "candling_date": {
+                  "format": "yyyyMMddHHmmss||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||strict_date_optional_time||epoch_millis",
+                  "type": "date"
+                },
+                "setting_rem": {
+                  "copy_to": [
+                    "fullsearch"
+                  ],
+                  "search_analyzer": "standard",
+                  "analyzer": "edgengram_analyzer",
+                  "fields": {
+                    "ko": {
+                      "search_analyzer": "standard",
+                      "analyzer": "nori_analyzer",
+                      "type": "text"
+                    },
+                    "th": {
+                      "search_analyzer": "standard",
+                      "analyzer": "thai",
+                      "type": "text"
+                    },
+                    "en": {
+                      "search_analyzer": "standard",
+                      "analyzer": "english",
+                      "type": "text"
+                    },
+                    "cn": {
+                      "search_analyzer": "standard",
+                      "analyzer": "smartcn",
+                      "type": "text"
+                    },
+                    "id": {
+                      "search_analyzer": "standard",
+                      "analyzer": "indonesian",
+                      "type": "text"
+                    }
+                  },
+                  "type": "text"
+                },
+                "cutting_hist": {
+                  "type": "nested",
+                  "properties": {
+                    "fertile": {
+                      "type": "long"
+                    },
+                    "seq_no": {
+                      "type": "keyword"
+                    },
+                    "work_date": {
+                      "format": "yyyyMMddHHmmss||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||strict_date_optional_time||epoch_millis",
+                      "type": "date"
+                    },
+                    "setting": {
+                      "type": "long"
+                    }
+                  }
+                },
+                "fertile_qty": {
+                  "type": "long"
+                },
+                "candling_rem": {
+                  "copy_to": [
+                    "fullsearch"
+                  ],
+                  "search_analyzer": "standard",
+                  "analyzer": "edgengram_analyzer",
+                  "fields": {
+                    "ko": {
+                      "search_analyzer": "standard",
+                      "analyzer": "nori_analyzer",
+                      "type": "text"
+                    },
+                    "th": {
+                      "search_analyzer": "standard",
+                      "analyzer": "thai",
+                      "type": "text"
+                    },
+                    "en": {
+                      "search_analyzer": "standard",
+                      "analyzer": "english",
+                      "type": "text"
+                    },
+                    "cn": {
+                      "search_analyzer": "standard",
+                      "analyzer": "smartcn",
+                      "type": "text"
+                    },
+                    "id": {
+                      "search_analyzer": "standard",
+                      "analyzer": "indonesian",
+                      "type": "text"
+                    }
+                  },
+                  "type": "text"
+                },
+                "setting_date": {
+                  "format": "yyyyMMddHHmmss||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||strict_date_optional_time||epoch_millis",
+                  "type": "date"
+                },
+                "setting_qty": {
+                  "type": "long"
+                },
+                "hatcher_id": {
+                  "fields": {
+                    "ngram": {
+                      "search_analyzer": "standard",
+                      "analyzer": "ngram_analyzer",
+                      "type": "text"
+                    }
+                  },
+                  "type": "keyword"
+                }
+              }
+            },
+            "hatchery_id": {
+              "type": "keyword"
+            },
+            "day_tx_ratio": {
+              "type": "float"
+            },
+            "egg_receive_no": {
+              "type": "keyword"
+            }
+          }
+        },
+        "by_product": {
+          "properties": {
+            "total": {
+              "type": "long"
+            },
+            "explode": {
+              "type": "long"
+            },
+            "infertile": {
+              "type": "long"
+            }
+          }
+        },
+        "fertile_cut": {
+          "type": "long"
+        },
+        "fertile_ratio": {
+          "type": "float"
+        },
+        "setting": {
+          "type": "long"
+        },
+        "setting_cut": {
+          "type": "long"
+        }
+      }
+    },
+    "fullsearch": {
+      "search_analyzer": "standard",
+      "analyzer": "edgengram_analyzer",
+      "fields": {
+        "ko": {
+          "search_analyzer": "standard",
+          "analyzer": "nori_analyzer",
+          "type": "text"
+        },
+        "th": {
+          "search_analyzer": "standard",
+          "analyzer": "thai",
+          "type": "text"
+        },
+        "en": {
+          "search_analyzer": "standard",
+          "analyzer": "english",
+          "type": "text"
+        },
+        "cn": {
+          "search_analyzer": "standard",
+          "analyzer": "smartcn",
+          "type": "text"
+        },
+        "id": {
+          "search_analyzer": "standard",
+          "analyzer": "indonesian",
+          "type": "text"
+        }
+      },
+      "type": "text"
+    },
+    "std_bw_m_list": {
+      "type": "nested",
+      "properties": {
+        "on_day": {
+          "type": "boolean"
+        },
+        "age_week": {
+          "type": "integer"
+        },
+        "value": {
+          "type": "float"
+        },
+        "age": {
+          "type": "integer"
+        }
+      }
+    },
+    "farm": {
+      "properties": {
+        "end_date": {
+          "format": "yyyyMMddHHmmss||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||strict_date_optional_time||epoch_millis",
+          "type": "date"
+        },
+        "zip": {
+          "type": "keyword"
+        },
+        "addr2": {
+          "copy_to": [
+            "fullsearch"
+          ],
+          "search_analyzer": "standard",
+          "analyzer": "edgengram_analyzer",
+          "fields": {
+            "ko": {
+              "search_analyzer": "standard",
+              "analyzer": "nori_analyzer",
+              "type": "text"
+            },
+            "th": {
+              "search_analyzer": "standard",
+              "analyzer": "thai",
+              "type": "text"
+            },
+            "en": {
+              "search_analyzer": "standard",
+              "analyzer": "english",
+              "type": "text"
+            },
+            "cn": {
+              "search_analyzer": "standard",
+              "analyzer": "smartcn",
+              "type": "text"
+            },
+            "id": {
+              "search_analyzer": "standard",
+              "analyzer": "indonesian",
+              "type": "text"
+            }
+          },
+          "type": "text"
+        },
+        "addr1": {
+          "copy_to": [
+            "fullsearch"
+          ],
+          "search_analyzer": "standard",
+          "analyzer": "edgengram_analyzer",
+          "fields": {
+            "ko": {
+              "search_analyzer": "standard",
+              "analyzer": "nori_analyzer",
+              "type": "text"
+            },
+            "th": {
+              "search_analyzer": "standard",
+              "analyzer": "thai",
+              "type": "text"
+            },
+            "en": {
+              "search_analyzer": "standard",
+              "analyzer": "english",
+              "type": "text"
+            },
+            "cn": {
+              "search_analyzer": "standard",
+              "analyzer": "smartcn",
+              "type": "text"
+            },
+            "id": {
+              "search_analyzer": "standard",
+              "analyzer": "indonesian",
+              "type": "text"
+            }
+          },
+          "type": "text"
+        },
+        "r_name": {
+          "copy_to": [
+            "fullsearch"
+          ],
+          "search_analyzer": "standard",
+          "analyzer": "edgengram_analyzer",
+          "fields": {
+            "ko": {
+              "search_analyzer": "standard",
+              "analyzer": "nori_analyzer",
+              "type": "text"
+            },
+            "th": {
+              "search_analyzer": "standard",
+              "analyzer": "thai",
+              "type": "text"
+            },
+            "en": {
+              "search_analyzer": "standard",
+              "analyzer": "english",
+              "type": "text"
+            },
+            "cn": {
+              "search_analyzer": "standard",
+              "analyzer": "smartcn",
+              "type": "text"
+            },
+            "id": {
+              "search_analyzer": "standard",
+              "analyzer": "indonesian",
+              "type": "text"
+            }
+          },
+          "type": "text"
+        },
+        "division": {
+          "fields": {
+            "ngram": {
+              "search_analyzer": "standard",
+              "analyzer": "ngram_analyzer",
+              "type": "text"
+            }
+          },
+          "type": "keyword"
+        },
+        "farm_code": {
+          "fields": {
+            "ngram": {
+              "search_analyzer": "standard",
+              "analyzer": "ngram_analyzer",
+              "type": "text"
+            }
+          },
+          "type": "keyword"
+        },
+        "d_name": {
+          "copy_to": [
+            "fullsearch"
+          ],
+          "search_analyzer": "standard",
+          "analyzer": "edgengram_analyzer",
+          "fields": {
+            "ko": {
+              "search_analyzer": "standard",
+              "analyzer": "nori_analyzer",
+              "type": "text"
+            },
+            "th": {
+              "search_analyzer": "standard",
+              "analyzer": "thai",
+              "type": "text"
+            },
+            "en": {
+              "search_analyzer": "standard",
+              "analyzer": "english",
+              "type": "text"
+            },
+            "cn": {
+              "search_analyzer": "standard",
+              "analyzer": "smartcn",
+              "type": "text"
+            },
+            "id": {
+              "search_analyzer": "standard",
+              "analyzer": "indonesian",
+              "type": "text"
+            }
+          },
+          "type": "text"
+        },
+        "name": {
+          "copy_to": [
+            "fullsearch"
+          ],
+          "search_analyzer": "standard",
+          "analyzer": "edgengram_analyzer",
+          "fields": {
+            "ko": {
+              "search_analyzer": "standard",
+              "analyzer": "nori_analyzer",
+              "type": "text"
+            },
+            "th": {
+              "search_analyzer": "standard",
+              "analyzer": "thai",
+              "type": "text"
+            },
+            "en": {
+              "search_analyzer": "standard",
+              "analyzer": "english",
+              "type": "text"
+            },
+            "cn": {
+              "search_analyzer": "standard",
+              "analyzer": "smartcn",
+              "type": "text"
+            },
+            "id": {
+              "search_analyzer": "standard",
+              "analyzer": "indonesian",
+              "type": "text"
+            }
+          },
+          "type": "text"
+        },
+        "location": {
+          "type": "geo_point"
+        },
+        "region": {
+          "fields": {
+            "ngram": {
+              "search_analyzer": "standard",
+              "analyzer": "ngram_analyzer",
+              "type": "text"
+            }
+          },
+          "type": "keyword"
+        },
+        "s_name": {
+          "copy_to": [
+            "fullsearch"
+          ],
+          "search_analyzer": "standard",
+          "analyzer": "edgengram_analyzer",
+          "fields": {
+            "ko": {
+              "search_analyzer": "standard",
+              "analyzer": "nori_analyzer",
+              "type": "text"
+            },
+            "th": {
+              "search_analyzer": "standard",
+              "analyzer": "thai",
+              "type": "text"
+            },
+            "en": {
+              "search_analyzer": "standard",
+              "analyzer": "english",
+              "type": "text"
+            },
+            "cn": {
+              "search_analyzer": "standard",
+              "analyzer": "smartcn",
+              "type": "text"
+            },
+            "id": {
+              "search_analyzer": "standard",
+              "analyzer": "indonesian",
+              "type": "text"
+            }
+          },
+          "type": "text"
+        },
+        "sub_region": {
+          "fields": {
+            "ngram": {
+              "search_analyzer": "standard",
+              "analyzer": "ngram_analyzer",
+              "type": "text"
+            }
+          },
+          "type": "keyword"
+        },
+        "class": {
+          "fields": {
+            "ngram": {
+              "search_analyzer": "standard",
+              "analyzer": "ngram_analyzer",
+              "type": "text"
+            }
+          },
+          "type": "keyword"
+        },
+        "class_name": {
+          "copy_to": [
+            "fullsearch"
+          ],
+          "type": "text"
+        },
+        "short_code": {
+          "fields": {
+            "ngram": {
+              "search_analyzer": "standard",
+              "analyzer": "ngram_analyzer",
+              "type": "text"
+            }
+          },
+          "type": "keyword"
+        },
+        "start_date": {
+          "format": "yyyyMMddHHmmss||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||strict_date_optional_time||epoch_millis",
+          "type": "date"
+        },
+        "status": {
+          "type": "keyword"
+        }
+      }
+    },
+    "std_bw_f_list": {
+      "type": "nested",
+      "properties": {
+        "on_day": {
+          "type": "boolean"
+        },
+        "age_week": {
+          "type": "integer"
+        },
+        "value": {
+          "type": "float"
+        },
+        "age": {
+          "type": "integer"
+        }
+      }
+    },
+    "transfer_hatchery": {
+      "properties": {
+        "farm_code": {
+          "type": "keyword"
+        },
+        "hh_id": {
+          "type": "keyword"
+        },
+        "daily_egg": {
+          "properties": {
+            "dirty": {
+              "type": "long"
+            },
+            "small": {
+              "type": "long"
+            },
+            "damage": {
+              "type": "long"
+            },
+            "crack": {
+              "type": "long"
+            },
+            "miss_shape": {
+              "type": "long"
+            },
+            "total": {
+              "type": "long"
+            },
+            "jumbo": {
+              "type": "long"
+            },
+            "good": {
+              "type": "long"
+            },
+            "transfer_egg_dtl": {
+              "type": "nested",
+              "properties": {
+                "transfer_no": {
+                  "fields": {
+                    "ngram": {
+                      "search_analyzer": "standard",
+                      "analyzer": "ngram_analyzer",
+                      "type": "text"
+                    }
+                  },
+                  "type": "keyword"
+                },
+                "egg": {
+                  "properties": {
+                    "dirty": {
+                      "type": "long"
+                    },
+                    "damage": {
+                      "type": "long"
+                    },
+                    "crack": {
+                      "type": "long"
+                    },
+                    "miss_shape": {
+                      "type": "long"
+                    },
+                    "jumbo": {
+                      "type": "long"
+                    },
+                    "good": {
+                      "type": "long"
+                    }
+                  }
+                },
+                "p_order_no": {
+                  "fields": {
+                    "ngram": {
+                      "search_analyzer": "standard",
+                      "analyzer": "ngram_analyzer",
+                      "type": "text"
+                    }
+                  },
+                  "type": "keyword"
+                },
+                "transfer_date": {
+                  "format": "yyyyMMddHHmmss||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||strict_date_optional_time||epoch_millis",
+                  "type": "date"
+                },
+                "customer_code": {
+                  "type": "keyword"
+                },
+                "hatchery_id": {
+                  "type": "keyword"
+                },
+                "day_tx_ratio": {
+                  "type": "float"
+                }
+              }
+            }
+          }
+        },
+        "flock_id": {
+          "type": "keyword"
+        },
+        "ep_date": {
+          "format": "yyyyMMddHHmmss||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||strict_date_optional_time||epoch_millis",
+          "type": "date"
+        }
+      }
+    },
+    "eggprod": {
+      "properties": {
+        "lay_start_female": {
+          "type": "long"
+        },
+        "culling": {
+          "properties": {
+            "damge": {
+              "type": "long"
+            },
+            "dirty": {
+              "type": "long"
+            },
+            "small": {
+              "type": "long"
+            },
+            "crack": {
+              "type": "long"
+            },
+            "miss_shape": {
+              "type": "long"
+            },
+            "total": {
+              "type": "long"
+            },
+            "jumbo": {
+              "type": "long"
+            },
+            "thin": {
+              "type": "long"
+            }
+          }
+        },
+        "age_day": {
+          "type": "short"
+        },
+        "ep_per_hh_std": {
+          "type": "float"
+        },
+        "good_egg": {
+          "type": "long"
+        },
+        "tohatchery": {
+          "properties": {
+            "culling": {
+              "type": "long"
+            },
+            "good": {
+              "type": "long"
+            }
+          }
+        },
+        "floor_egg_qty": {
+          "type": "long"
+        },
+        "good_egg_cum": {
+          "type": "long"
+        },
+        "official": {
+          "type": "boolean"
+        },
+        "age_week": {
+          "type": "short"
+        },
+        "good_egg_weight_std": {
+          "type": "float"
+        },
+        "ep_cum_per_hh_act": {
+          "type": "float"
+        },
+        "per_henhouse": {
+          "type": "float"
+        },
+        "prod_age_week": {
+          "type": "short"
+        },
+        "good_egg_weight_act": {
+          "type": "float"
+        },
+        "good_eggs_stock": {
+          "type": "long"
+        },
+        "good_egg_weight": {
+          "type": "float"
+        },
+        "total_egg_qty": {
+          "type": "long"
+        },
+        "prod_age_day": {
+          "type": "short"
+        },
+        "total_egg_qty_cum": {
+          "type": "long"
+        },
+        "tostock": {
+          "properties": {
+            "culling": {
+              "type": "long"
+            },
+            "good": {
+              "type": "long"
+            }
+          }
+        },
+        "ep_cum_per_hh_std": {
+          "type": "float"
+        },
+        "ep_date": {
+          "format": "yyyyMMddHHmmss||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||strict_date_optional_time||epoch_millis",
+          "type": "date"
+        },
+        "per_henday": {
+          "type": "float"
+        }
+      }
+    },
+    "grading": {
+      "properties": {
+        "grading_cut": {
+          "type": "long"
+        },
+        "he_cum_per_hh_act": {
+          "type": "float"
+        },
+        "by_product": {
+          "properties": {
+            "dirty": {
+              "type": "long"
+            },
+            "small": {
+              "type": "long"
+            },
+            "damage": {
+              "type": "long"
+            },
+            "crack": {
+              "type": "long"
+            },
+            "miss_shape": {
+              "type": "long"
+            },
+            "total": {
+              "type": "long"
+            },
+            "jumbo": {
+              "type": "long"
+            },
+            "thin": {
+              "type": "long"
+            }
+          }
+        },
+        "hatching_egg_cum": {
+          "type": "long"
+        },
+        "he_cum_per_hh_std": {
+          "type": "float"
+        },
+        "grading_dtl": {
+          "type": "nested",
+          "properties": {
+            "grading_cut": {
+              "type": "long"
+            },
+            "discard_rem": {
+              "copy_to": [
+                "fullsearch"
+              ],
+              "search_analyzer": "standard",
+              "analyzer": "edgengram_analyzer",
+              "fields": {
+                "ko": {
+                  "search_analyzer": "standard",
+                  "analyzer": "nori_analyzer",
+                  "type": "text"
+                },
+                "th": {
+                  "search_analyzer": "standard",
+                  "analyzer": "thai",
+                  "type": "text"
+                },
+                "en": {
+                  "search_analyzer": "standard",
+                  "analyzer": "english",
+                  "type": "text"
+                },
+                "cn": {
+                  "search_analyzer": "standard",
+                  "analyzer": "smartcn",
+                  "type": "text"
+                },
+                "id": {
+                  "search_analyzer": "standard",
+                  "analyzer": "indonesian",
+                  "type": "text"
+                }
+              },
+              "type": "text"
+            },
+            "transfer_qty": {
+              "type": "long"
+            },
+            "small_egg_qty": {
+              "type": "long"
+            },
+            "crack_egg_qty": {
+              "type": "long"
+            },
+            "damage_egg_qty": {
+              "type": "long"
+            },
+            "dirty_egg_qty": {
+              "type": "long"
+            },
+            "discard_qty": {
+              "type": "long"
+            },
+            "grading_date": {
+              "format": "yyyyMMddHHmmss||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||strict_date_optional_time||epoch_millis",
+              "type": "date"
+            },
+            "miss_shape_qty": {
+              "type": "long"
+            },
+            "jumbo_egg_qty": {
+              "type": "long"
+            },
+            "none_setting_qty": {
+              "type": "long"
+            },
+            "grading_rem": {
+              "copy_to": [
+                "fullsearch"
+              ],
+              "search_analyzer": "standard",
+              "analyzer": "edgengram_analyzer",
+              "fields": {
+                "ko": {
+                  "search_analyzer": "standard",
+                  "analyzer": "nori_analyzer",
+                  "type": "text"
+                },
+                "th": {
+                  "search_analyzer": "standard",
+                  "analyzer": "thai",
+                  "type": "text"
+                },
+                "en": {
+                  "search_analyzer": "standard",
+                  "analyzer": "english",
+                  "type": "text"
+                },
+                "cn": {
+                  "search_analyzer": "standard",
+                  "analyzer": "smartcn",
+                  "type": "text"
+                },
+                "id": {
+                  "search_analyzer": "standard",
+                  "analyzer": "indonesian",
+                  "type": "text"
+                }
+              },
+              "type": "text"
+            },
+            "thin_egg_qty": {
+              "type": "long"
+            },
+            "setting_qty": {
+              "type": "long"
+            },
+            "grading_qty": {
+              "type": "long"
+            },
+            "grading_cut_dtl": {
+              "type": "nested",
+              "properties": {
+                "receive_date": {
+                  "format": "yyyyMMddHHmmss||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||strict_date_optional_time||epoch_millis",
+                  "type": "date"
+                },
+                "seq_no": {
+                  "type": "keyword"
+                },
+                "work_date": {
+                  "format": "yyyyMMddHHmmss||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||strict_date_optional_time||epoch_millis",
+                  "type": "date"
+                },
+                "hatching_egg_qty": {
+                  "type": "long"
+                }
+              }
+            },
+            "hatchery_id": {
+              "type": "keyword"
+            },
+            "egg_receive_no": {
+              "type": "keyword"
+            },
+            "hatching_egg_qty": {
+              "type": "long"
+            }
+          }
+        },
+        "hatching_egg": {
+          "type": "long"
+        }
+      }
+    },
+    "work_date": {
+      "format": "yyyyMMddHHmmss||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||strict_date_optional_time||epoch_millis",
+      "type": "date"
+    },
+    "std_he_cum_list": {
+      "type": "nested",
+      "properties": {
+        "on_day": {
+          "type": "boolean"
+        },
+        "age_week": {
+          "type": "integer"
+        },
+        "value": {
+          "type": "float"
+        },
+        "age": {
+          "type": "integer"
+        }
+      }
+    },
+    "std_ep_list": {
+      "type": "nested",
+      "properties": {
+        "on_day": {
+          "type": "boolean"
+        },
+        "age_week": {
+          "type": "integer"
+        },
+        "value": {
+          "type": "float"
+        },
+        "age": {
+          "type": "integer"
+        }
+      }
+    },
+    "receive_hatchery": {
+      "properties": {
+        "receive": {
+          "properties": {
+            "dirty": {
+              "type": "long"
+            },
+            "small": {
+              "type": "long"
+            },
+            "miss_shape": {
+              "type": "long"
+            },
+            "total": {
+              "type": "long"
+            },
+            "jumbo": {
+              "type": "long"
+            },
+            "good": {
+              "type": "long"
+            }
+          }
+        },
+        "move": {
+          "properties": {
+            "in": {
+              "type": "long"
+            },
+            "out": {
+              "type": "long"
+            }
+          }
+        },
+        "receive_dtl": {
+          "type": "nested",
+          "properties": {
+            "miss_shape_egg": {
+              "type": "long"
+            },
+            "good_egg": {
+              "type": "long"
+            },
+            "from_receive_no": {
+              "fields": {
+                "ngram": {
+                  "search_analyzer": "standard",
+                  "analyzer": "ngram_analyzer",
+                  "type": "text"
+                }
+              },
+              "type": "keyword"
+            },
+            "small_egg": {
+              "type": "long"
+            },
+            "grading_date": {
+              "format": "yyyyMMddHHmmss||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||strict_date_optional_time||epoch_millis",
+              "type": "date"
+            },
+            "receive_date": {
+              "format": "yyyyMMddHHmmss||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||strict_date_optional_time||epoch_millis",
+              "type": "date"
+            },
+            "transfer_no": {
+              "type": "keyword"
+            },
+            "truck_no": {
+              "fields": {
+                "ngram": {
+                  "search_analyzer": "standard",
+                  "analyzer": "ngram_analyzer",
+                  "type": "text"
+                }
+              },
+              "type": "keyword"
+            },
+            "move_in_flag": {
+              "type": "keyword"
+            },
+            "move_out_date": {
+              "format": "yyyyMMddHHmmss||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||strict_date_optional_time||epoch_millis",
+              "type": "date"
+            },
+            "dirty_egg": {
+              "type": "long"
+            },
+            "hatchery_id": {
+              "fields": {
+                "ngram": {
+                  "search_analyzer": "standard",
+                  "analyzer": "ngram_analyzer",
+                  "type": "text"
+                }
+              },
+              "type": "keyword"
+            },
+            "from_hatchery_id": {
+              "fields": {
+                "ngram": {
+                  "search_analyzer": "standard",
+                  "analyzer": "ngram_analyzer",
+                  "type": "text"
+                }
+              },
+              "type": "keyword"
+            },
+            "remarks": {
+              "copy_to": [
+                "fullsearch"
+              ],
+              "search_analyzer": "standard",
+              "analyzer": "edgengram_analyzer",
+              "fields": {
+                "ko": {
+                  "search_analyzer": "standard",
+                  "analyzer": "nori_analyzer",
+                  "type": "text"
+                },
+                "th": {
+                  "search_analyzer": "standard",
+                  "analyzer": "thai",
+                  "type": "text"
+                },
+                "en": {
+                  "search_analyzer": "standard",
+                  "analyzer": "english",
+                  "type": "text"
+                },
+                "cn": {
+                  "search_analyzer": "standard",
+                  "analyzer": "smartcn",
+                  "type": "text"
+                },
+                "id": {
+                  "search_analyzer": "standard",
+                  "analyzer": "indonesian",
+                  "type": "text"
+                }
+              },
+              "type": "text"
+            },
+            "day_tx_ratio": {
+              "type": "float"
+            },
+            "egg_receive_no": {
+              "fields": {
+                "ngram": {
+                  "search_analyzer": "standard",
+                  "analyzer": "ngram_analyzer",
+                  "type": "text"
+                }
+              },
+              "type": "keyword"
+            },
+            "jumbo_egg": {
+              "type": "long"
+            }
+          }
+        }
+      }
+    },
+    "std_hatch_list": {
+      "type": "nested",
+      "properties": {
+        "on_day": {
+          "type": "boolean"
+        },
+        "age_week": {
+          "type": "integer"
+        },
+        "value": {
+          "type": "float"
+        },
+        "age": {
+          "type": "integer"
+        }
+      }
+    },
+    "std_dep_m_list": {
+      "type": "nested",
+      "properties": {
+        "on_day": {
+          "type": "boolean"
+        },
+        "age_week": {
+          "type": "integer"
+        },
+        "value": {
+          "type": "float"
+        },
+        "age": {
+          "type": "integer"
+        }
+      }
+    },
+    "std_dep_cum_f_list": {
+      "type": "nested",
+      "properties": {
+        "on_day": {
+          "type": "boolean"
+        },
+        "age_week": {
+          "type": "integer"
+        },
+        "value": {
+          "type": "float"
+        },
+        "age": {
+          "type": "integer"
+        }
+      }
+    },
+    "breed_log": {
+      "properties": {
+        "feed_per_he": {
+          "type": "float"
+        },
+        "feed_hist": {
+          "properties": {
+            "feed_date": {
+              "format": "yyyyMMddHHmmss||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||strict_date_optional_time||epoch_millis",
+              "type": "date"
+            },
+            "feed_hist": {
+              "type": "nested",
+              "properties": {
+                "female": {
+                  "properties": {
+                    "seq_no": {
+                      "type": "keyword"
+                    },
+                    "using": {
+                      "fields": {
+                        "ngram": {
+                          "search_analyzer": "standard",
+                          "analyzer": "ngram_analyzer",
+                          "type": "text"
+                        }
+                      },
+                      "type": "keyword"
+                    },
+                    "code": {
+                      "fields": {
+                        "ngram": {
+                          "search_analyzer": "standard",
+                          "analyzer": "ngram_analyzer",
+                          "type": "text"
+                        }
+                      },
+                      "type": "keyword"
+                    },
+                    "name": {
+                      "copy_to": [
+                        "fullsearch"
+                      ],
+                      "search_analyzer": "standard",
+                      "analyzer": "edgengram_analyzer",
+                      "fields": {
+                        "ko": {
+                          "search_analyzer": "standard",
+                          "analyzer": "nori_analyzer",
+                          "type": "text"
+                        },
+                        "th": {
+                          "search_analyzer": "standard",
+                          "analyzer": "thai",
+                          "type": "text"
+                        },
+                        "en": {
+                          "search_analyzer": "standard",
+                          "analyzer": "english",
+                          "type": "text"
+                        },
+                        "cn": {
+                          "search_analyzer": "standard",
+                          "analyzer": "smartcn",
+                          "type": "text"
+                        },
+                        "id": {
+                          "search_analyzer": "standard",
+                          "analyzer": "indonesian",
+                          "type": "text"
+                        }
+                      },
+                      "type": "text"
+                    },
+                    "using_name": {
+                      "search_analyzer": "standard",
+                      "analyzer": "edgengram_analyzer",
+                      "fields": {
+                        "ko": {
+                          "search_analyzer": "standard",
+                          "analyzer": "nori_analyzer",
+                          "type": "text"
+                        },
+                        "th": {
+                          "search_analyzer": "standard",
+                          "analyzer": "thai",
+                          "type": "text"
+                        },
+                        "en": {
+                          "search_analyzer": "standard",
+                          "analyzer": "english",
+                          "type": "text"
+                        },
+                        "cn": {
+                          "search_analyzer": "standard",
+                          "analyzer": "smartcn",
+                          "type": "text"
+                        },
+                        "id": {
+                          "search_analyzer": "standard",
+                          "analyzer": "indonesian",
+                          "type": "text"
+                        }
+                      },
+                      "type": "text"
+                    },
+                    "use_amount": {
+                      "type": "float"
+                    }
+                  }
+                },
+                "male": {
+                  "properties": {
+                    "seq_no": {
+                      "type": "keyword"
+                    },
+                    "using": {
+                      "fields": {
+                        "ngram": {
+                          "search_analyzer": "standard",
+                          "analyzer": "ngram_analyzer",
+                          "type": "text"
+                        }
+                      },
+                      "type": "keyword"
+                    },
+                    "code": {
+                      "fields": {
+                        "ngram": {
+                          "search_analyzer": "standard",
+                          "analyzer": "ngram_analyzer",
+                          "type": "text"
+                        }
+                      },
+                      "type": "keyword"
+                    },
+                    "name": {
+                      "copy_to": [
+                        "fullsearch"
+                      ],
+                      "search_analyzer": "standard",
+                      "analyzer": "edgengram_analyzer",
+                      "fields": {
+                        "ko": {
+                          "search_analyzer": "standard",
+                          "analyzer": "nori_analyzer",
+                          "type": "text"
+                        },
+                        "th": {
+                          "search_analyzer": "standard",
+                          "analyzer": "thai",
+                          "type": "text"
+                        },
+                        "en": {
+                          "search_analyzer": "standard",
+                          "analyzer": "english",
+                          "type": "text"
+                        },
+                        "cn": {
+                          "search_analyzer": "standard",
+                          "analyzer": "smartcn",
+                          "type": "text"
+                        },
+                        "id": {
+                          "search_analyzer": "standard",
+                          "analyzer": "indonesian",
+                          "type": "text"
+                        }
+                      },
+                      "type": "text"
+                    },
+                    "using_name": {
+                      "copy_to": [
+                        "fullsearch"
+                      ],
+                      "search_analyzer": "standard",
+                      "analyzer": "edgengram_analyzer",
+                      "fields": {
+                        "ko": {
+                          "search_analyzer": "standard",
+                          "analyzer": "nori_analyzer",
+                          "type": "text"
+                        },
+                        "th": {
+                          "search_analyzer": "standard",
+                          "analyzer": "thai",
+                          "type": "text"
+                        },
+                        "en": {
+                          "search_analyzer": "standard",
+                          "analyzer": "english",
+                          "type": "text"
+                        },
+                        "cn": {
+                          "search_analyzer": "standard",
+                          "analyzer": "smartcn",
+                          "type": "text"
+                        },
+                        "id": {
+                          "search_analyzer": "standard",
+                          "analyzer": "indonesian",
+                          "type": "text"
+                        }
+                      },
+                      "type": "text"
+                    },
+                    "use_amount": {
+                      "type": "float"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "age_day": {
+          "type": "short"
+        },
+        "breed_date": {
+          "format": "yyyyMMddHHmmss||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||strict_date_optional_time||epoch_millis",
+          "type": "date"
+        },
+        "weight": {
+          "properties": {
+            "female": {
+              "properties": {
+                "std": {
+                  "type": "float"
+                },
+                "act": {
+                  "type": "float"
+                },
+                "uniformity": {
+                  "type": "float"
+                }
+              }
+            },
+            "male": {
+              "properties": {
+                "std": {
+                  "type": "float"
+                },
+                "act": {
+                  "type": "float"
+                },
+                "uniformity": {
+                  "type": "float"
+                }
+              }
+            }
+          }
+        },
+        "medicine": {
+          "properties": {
+            "medi_hist": {
+              "type": "nested",
+              "properties": {
+                "seq_no": {
+                  "type": "keyword"
+                },
+                "amount": {
+                  "type": "float"
+                },
+                "unit": {
+                  "type": "text"
+                },
+                "using": {
+                  "fields": {
+                    "ngram": {
+                      "search_analyzer": "standard",
+                      "analyzer": "ngram_analyzer",
+                      "type": "text"
+                    }
+                  },
+                  "type": "keyword"
+                },
+                "code": {
+                  "fields": {
+                    "ngram": {
+                      "search_analyzer": "standard",
+                      "analyzer": "ngram_analyzer",
+                      "type": "text"
+                    }
+                  },
+                  "type": "keyword"
+                },
+                "name": {
+                  "copy_to": [
+                    "fullsearch"
+                  ],
+                  "search_analyzer": "standard",
+                  "analyzer": "edgengram_analyzer",
+                  "fields": {
+                    "ko": {
+                      "search_analyzer": "standard",
+                      "analyzer": "nori_analyzer",
+                      "type": "text"
+                    },
+                    "th": {
+                      "search_analyzer": "standard",
+                      "analyzer": "thai",
+                      "type": "text"
+                    },
+                    "en": {
+                      "search_analyzer": "standard",
+                      "analyzer": "english",
+                      "type": "text"
+                    },
+                    "cn": {
+                      "search_analyzer": "standard",
+                      "analyzer": "smartcn",
+                      "type": "text"
+                    },
+                    "id": {
+                      "search_analyzer": "standard",
+                      "analyzer": "indonesian",
+                      "type": "text"
+                    }
+                  },
+                  "type": "text"
+                },
+                "using_name": {
+                  "search_analyzer": "standard",
+                  "analyzer": "edgengram_analyzer",
+                  "fields": {
+                    "ko": {
+                      "search_analyzer": "standard",
+                      "analyzer": "nori_analyzer",
+                      "type": "text"
+                    },
+                    "th": {
+                      "search_analyzer": "standard",
+                      "analyzer": "thai",
+                      "type": "text"
+                    },
+                    "en": {
+                      "search_analyzer": "standard",
+                      "analyzer": "english",
+                      "type": "text"
+                    },
+                    "cn": {
+                      "search_analyzer": "standard",
+                      "analyzer": "smartcn",
+                      "type": "text"
+                    },
+                    "id": {
+                      "search_analyzer": "standard",
+                      "analyzer": "indonesian",
+                      "type": "text"
+                    }
+                  },
+                  "type": "text"
+                }
+              }
+            },
+            "remark": {
+              "copy_to": [
+                "fullsearch"
+              ],
+              "search_analyzer": "standard",
+              "analyzer": "edgengram_analyzer",
+              "fields": {
+                "ko": {
+                  "search_analyzer": "standard",
+                  "analyzer": "nori_analyzer",
+                  "type": "text"
+                },
+                "th": {
+                  "search_analyzer": "standard",
+                  "analyzer": "thai",
+                  "type": "text"
+                },
+                "en": {
+                  "search_analyzer": "standard",
+                  "analyzer": "english",
+                  "type": "text"
+                },
+                "cn": {
+                  "search_analyzer": "standard",
+                  "analyzer": "smartcn",
+                  "type": "text"
+                },
+                "id": {
+                  "search_analyzer": "standard",
+                  "analyzer": "indonesian",
+                  "type": "text"
+                }
+              },
+              "type": "text"
+            },
+            "medi_date": {
+              "format": "yyyyMMddHHmmss||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||strict_date_optional_time||epoch_millis",
+              "type": "date"
+            }
+          }
+        },
+        "age_week": {
+          "type": "short"
+        },
+        "lighting": {
+          "properties": {
+            "off": {
+              "format": "HHmm||HH:mm||hour_minute||strict_hour_minute",
+              "type": "date"
+            },
+            "on": {
+              "format": "HHmm||HH:mm||hour_minute||strict_hour_minute",
+              "type": "date"
+            }
+          }
+        },
+        "water": {
+          "type": "float"
+        },
+        "feed_per_ep": {
+          "type": "float"
+        },
+        "feed": {
+          "properties": {
+            "per_female_cum": {
+              "type": "float"
+            },
+            "per_male": {
+              "type": "float"
+            },
+            "feed_date": {
+              "format": "yyyyMMddHHmmss||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||strict_date_optional_time||epoch_millis",
+              "type": "date"
+            },
+            "std_male": {
+              "type": "float"
+            },
+            "per_female": {
+              "type": "float"
+            },
+            "male_cum": {
+              "type": "float"
+            },
+            "remark": {
+              "copy_to": [
+                "fullsearch"
+              ],
+              "search_analyzer": "standard",
+              "analyzer": "edgengram_analyzer",
+              "fields": {
+                "ko": {
+                  "search_analyzer": "standard",
+                  "analyzer": "nori_analyzer",
+                  "type": "text"
+                },
+                "th": {
+                  "search_analyzer": "standard",
+                  "analyzer": "thai",
+                  "type": "text"
+                },
+                "en": {
+                  "search_analyzer": "standard",
+                  "analyzer": "english",
+                  "type": "text"
+                },
+                "cn": {
+                  "search_analyzer": "standard",
+                  "analyzer": "smartcn",
+                  "type": "text"
+                },
+                "id": {
+                  "search_analyzer": "standard",
+                  "analyzer": "indonesian",
+                  "type": "text"
+                }
+              },
+              "type": "text"
+            },
+            "per_male_cum": {
+              "type": "float"
+            },
+            "female": {
+              "type": "float"
+            },
+            "female_cum": {
+              "type": "float"
+            },
+            "male": {
+              "type": "float"
+            },
+            "std_female": {
+              "type": "float"
+            }
+          }
+        },
+        "vaccine": {
+          "properties": {
+            "vacc_hist": {
+              "type": "nested",
+              "properties": {
+                "seq_no": {
+                  "type": "keyword"
+                },
+                "amount": {
+                  "type": "float"
+                },
+                "unit": {
+                  "type": "text"
+                },
+                "using": {
+                  "fields": {
+                    "ngram": {
+                      "search_analyzer": "standard",
+                      "analyzer": "ngram_analyzer",
+                      "type": "text"
+                    }
+                  },
+                  "type": "keyword"
+                },
+                "code": {
+                  "fields": {
+                    "ngram": {
+                      "search_analyzer": "standard",
+                      "analyzer": "ngram_analyzer",
+                      "type": "text"
+                    }
+                  },
+                  "type": "keyword"
+                },
+                "name": {
+                  "copy_to": [
+                    "fullsearch"
+                  ],
+                  "search_analyzer": "standard",
+                  "analyzer": "edgengram_analyzer",
+                  "fields": {
+                    "ko": {
+                      "search_analyzer": "standard",
+                      "analyzer": "nori_analyzer",
+                      "type": "text"
+                    },
+                    "th": {
+                      "search_analyzer": "standard",
+                      "analyzer": "thai",
+                      "type": "text"
+                    },
+                    "en": {
+                      "search_analyzer": "standard",
+                      "analyzer": "english",
+                      "type": "text"
+                    },
+                    "cn": {
+                      "search_analyzer": "standard",
+                      "analyzer": "smartcn",
+                      "type": "text"
+                    },
+                    "id": {
+                      "search_analyzer": "standard",
+                      "analyzer": "indonesian",
+                      "type": "text"
+                    }
+                  },
+                  "type": "text"
+                },
+                "using_name": {
+                  "copy_to": [
+                    "fullsearch"
+                  ],
+                  "search_analyzer": "standard",
+                  "analyzer": "edgengram_analyzer",
+                  "fields": {
+                    "ko": {
+                      "search_analyzer": "standard",
+                      "analyzer": "nori_analyzer",
+                      "type": "text"
+                    },
+                    "th": {
+                      "search_analyzer": "standard",
+                      "analyzer": "thai",
+                      "type": "text"
+                    },
+                    "en": {
+                      "search_analyzer": "standard",
+                      "analyzer": "english",
+                      "type": "text"
+                    },
+                    "cn": {
+                      "search_analyzer": "standard",
+                      "analyzer": "smartcn",
+                      "type": "text"
+                    },
+                    "id": {
+                      "search_analyzer": "standard",
+                      "analyzer": "indonesian",
+                      "type": "text"
+                    }
+                  },
+                  "type": "text"
+                }
+              }
+            },
+            "remark": {
+              "copy_to": [
+                "fullsearch"
+              ],
+              "search_analyzer": "standard",
+              "analyzer": "edgengram_analyzer",
+              "fields": {
+                "ko": {
+                  "search_analyzer": "standard",
+                  "analyzer": "nori_analyzer",
+                  "type": "text"
+                },
+                "th": {
+                  "search_analyzer": "standard",
+                  "analyzer": "thai",
+                  "type": "text"
+                },
+                "en": {
+                  "search_analyzer": "standard",
+                  "analyzer": "english",
+                  "type": "text"
+                },
+                "cn": {
+                  "search_analyzer": "standard",
+                  "analyzer": "smartcn",
+                  "type": "text"
+                },
+                "id": {
+                  "search_analyzer": "standard",
+                  "analyzer": "indonesian",
+                  "type": "text"
+                }
+              },
+              "type": "text"
+            },
+            "vacc_date": {
+              "format": "yyyyMMddHHmmss||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||strict_date_optional_time||epoch_millis",
+              "type": "date"
+            }
+          }
+        },
+        "depl": {
+          "properties": {
+            "female": {
+              "properties": {
+                "se": {
+                  "type": "long"
+                },
+                "se_ratio": {
+                  "type": "float"
+                },
+                "death": {
+                  "type": "long"
+                },
+                "depl_cum_std": {
+                  "type": "float"
+                },
+                "depl_std": {
+                  "type": "float"
+                },
+                "cumulation_ratio": {
+                  "type": "float"
+                },
+                "cull": {
+                  "type": "long"
+                },
+                "cumulation": {
+                  "type": "long"
+                },
+                "depl_ratio": {
+                  "type": "float"
+                },
+                "se_cumulation": {
+                  "type": "long"
+                }
+              }
+            },
+            "male": {
+              "properties": {
+                "se": {
+                  "type": "long"
+                },
+                "se_ratio": {
+                  "type": "float"
+                },
+                "death": {
+                  "type": "long"
+                },
+                "depl_cum_std": {
+                  "type": "float"
+                },
+                "depl_std": {
+                  "type": "float"
+                },
+                "cumulation_ratio": {
+                  "type": "float"
+                },
+                "cull": {
+                  "type": "long"
+                },
+                "cumulation": {
+                  "type": "long"
+                },
+                "depl_ratio": {
+                  "type": "float"
+                },
+                "se_cumulation": {
+                  "type": "long"
+                }
+              }
+            }
+          }
+        },
+        "feed_per_day": {
+          "properties": {
+            "hen_day": {
+              "type": "float"
+            },
+            "total_hen": {
+              "type": "float"
+            }
+          }
+        },
+        "veterinarian": {
+          "copy_to": "fullsearch",
+          "search_analyzer": "standard",
+          "analyzer": "edgengram_analyzer",
+          "fields": {
+            "ko": {
+              "search_analyzer": "standard",
+              "analyzer": "nori_analyzer",
+              "type": "text"
+            },
+            "th": {
+              "search_analyzer": "standard",
+              "analyzer": "thai",
+              "type": "text"
+            },
+            "en": {
+              "search_analyzer": "standard",
+              "analyzer": "english",
+              "type": "text"
+            },
+            "cn": {
+              "search_analyzer": "standard",
+              "analyzer": "smartcn",
+              "type": "text"
+            },
+            "id": {
+              "search_analyzer": "standard",
+              "analyzer": "indonesian",
+              "type": "text"
+            }
+          },
+          "type": "text"
+        },
+        "temperature": {
+          "properties": {
+            "in": {
+              "type": "float"
+            },
+            "mtime": {
+              "format": "HHmm||HH:mm||hour_minute||strict_hour_minute",
+              "type": "date"
+            },
+            "out": {
+              "type": "float"
+            }
+          }
+        },
+        "closed": {
+          "properties": {
+            "total": {
+              "type": "long"
+            },
+            "female": {
+              "type": "long"
+            },
+            "male": {
+              "type": "long"
+            }
+          }
+        },
+        "humidity": {
+          "properties": {
+            "in": {
+              "type": "float"
+            },
+            "mtime": {
+              "format": "HHmm||HH:mm||hour_minute||strict_hour_minute",
+              "type": "date"
+            },
+            "out": {
+              "type": "float"
+            }
+          }
+        },
+        "age_week_last_day": {
+          "format": "yyyyMMddHHmmss||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||strict_date_optional_time||epoch_millis",
+          "type": "date"
+        },
+        "current_birds": {
+          "properties": {
+            "total": {
+              "type": "long"
+            },
+            "female": {
+              "type": "long"
+            },
+            "male": {
+              "type": "long"
+            },
+            "ratio": {
+              "type": "float"
+            }
+          }
+        }
+      }
+    },
+    "hatching": {
+      "properties": {
+        "fertile": {
+          "type": "long"
+        },
+        "by_product": {
+          "properties": {
+            "total": {
+              "type": "long"
+            },
+            "def": {
+              "type": "long"
+            },
+            "dead": {
+              "type": "long"
+            },
+            "bloat": {
+              "type": "long"
+            },
+            "dis": {
+              "type": "long"
+            }
+          }
+        },
+        "culling": {
+          "properties": {
+            "total": {
+              "type": "long"
+            },
+            "omphalitis": {
+              "type": "long"
+            },
+            "weak": {
+              "type": "long"
+            }
+          }
+        },
+        "psdoc": {
+          "properties": {
+            "total": {
+              "type": "long"
+            },
+            "sc_per_hh_act": {
+              "type": "float"
+            },
+            "sc_per_hh_std": {
+              "type": "float"
+            },
+            "male_cum": {
+              "type": "long"
+            },
+            "female": {
+              "type": "long"
+            },
+            "total_cum": {
+              "type": "long"
+            },
+            "female_cum": {
+              "type": "long"
+            },
+            "male": {
+              "type": "long"
+            }
+          }
+        },
+        "hatch_ratio": {
+          "type": "float"
+        },
+        "cutting": {
+          "properties": {
+            "standard_2": {
+              "type": "long"
+            },
+            "total": {
+              "type": "long"
+            },
+            "premium": {
+              "type": "long"
+            },
+            "bm": {
+              "type": "long"
+            },
+            "gradeb": {
+              "type": "long"
+            },
+            "polos": {
+              "type": "long"
+            },
+            "standard_1": {
+              "type": "long"
+            }
+          }
+        },
+        "hatching_dtl": {
+          "type": "nested",
+          "properties": {
+            "hatching_sub_dtl": {
+              "type": "nested",
+              "properties": {
+                "standard_2": {
+                  "type": "long"
+                },
+                "def": {
+                  "type": "long"
+                },
+                "sex": {
+                  "type": "long"
+                },
+                "cutting_hist": {
+                  "type": "nested",
+                  "properties": {
+                    "seq_no": {
+                      "type": "keyword"
+                    },
+                    "standard_2": {
+                      "type": "long"
+                    },
+                    "premium": {
+                      "type": "long"
+                    },
+                    "work_date": {
+                      "format": "yyyyMMddHHmmss||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||strict_date_optional_time||epoch_millis",
+                      "type": "date"
+                    },
+                    "bm": {
+                      "type": "long"
+                    },
+                    "gradeb": {
+                      "type": "long"
+                    },
+                    "polos": {
+                      "type": "long"
+                    },
+                    "standard_1": {
+                      "type": "long"
+                    }
+                  }
+                },
+                "dead": {
+                  "type": "long"
+                },
+                "bm": {
+                  "type": "long"
+                },
+                "setting_seq": {
+                  "type": "keyword"
+                },
+                "strain_code": {
+                  "type": "keyword"
+                },
+                "bloat": {
+                  "type": "long"
+                },
+                "dis": {
+                  "type": "long"
+                },
+                "polos": {
+                  "type": "long"
+                },
+                "psdoc_m": {
+                  "type": "long"
+                },
+                "weak": {
+                  "type": "long"
+                },
+                "psdoc_f": {
+                  "type": "long"
+                },
+                "ompal": {
+                  "type": "long"
+                },
+                "premium": {
+                  "type": "long"
+                },
+                "hatch_date": {
+                  "format": "yyyyMMddHHmmss||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||strict_date_optional_time||epoch_millis",
+                  "type": "date"
+                },
+                "gradeb": {
+                  "type": "long"
+                },
+                "remarks": {
+                  "copy_to": [
+                    "fullsearch"
+                  ],
+                  "search_analyzer": "standard",
+                  "analyzer": "edgengram_analyzer",
+                  "fields": {
+                    "ko": {
+                      "search_analyzer": "standard",
+                      "analyzer": "nori_analyzer",
+                      "type": "text"
+                    },
+                    "th": {
+                      "search_analyzer": "standard",
+                      "analyzer": "thai",
+                      "type": "text"
+                    },
+                    "en": {
+                      "search_analyzer": "standard",
+                      "analyzer": "english",
+                      "type": "text"
+                    },
+                    "cn": {
+                      "search_analyzer": "standard",
+                      "analyzer": "smartcn",
+                      "type": "text"
+                    },
+                    "id": {
+                      "search_analyzer": "standard",
+                      "analyzer": "indonesian",
+                      "type": "text"
+                    }
+                  },
+                  "type": "text"
+                },
+                "standard_1": {
+                  "type": "long"
+                }
+              }
+            },
+            "hatching_id": {
+              "type": "keyword"
+            },
+            "day_tx_ratio": {
+              "type": "float"
+            },
+            "egg_receive_no": {
+              "type": "keyword"
+            }
+          }
+        },
+        "sales": {
+          "properties": {
+            "standard_2": {
+              "type": "long"
+            },
+            "total": {
+              "type": "long"
+            },
+            "premium": {
+              "type": "long"
+            },
+            "sc_per_hh_act": {
+              "type": "float"
+            },
+            "sc_per_hh_std": {
+              "type": "float"
+            },
+            "bm": {
+              "type": "long"
+            },
+            "gradeb": {
+              "type": "long"
+            },
+            "total_cum": {
+              "type": "long"
+            },
+            "polos": {
+              "type": "long"
+            },
+            "standard_1": {
+              "type": "long"
+            }
+          }
+        }
+      }
+    },
+    "std_feed_amt_m_list": {
+      "type": "nested",
+      "properties": {
+        "on_day": {
+          "type": "boolean"
+        },
+        "age_week": {
+          "type": "integer"
+        },
+        "value": {
+          "type": "float"
+        },
+        "age": {
+          "type": "integer"
+        }
+      }
+    },
+    "breed_hh": {
+      "properties": {
+        "chickin_date": {
+          "format": "yyyyMMddHHmmss||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||strict_date_optional_time||epoch_millis",
+          "type": "date"
+        },
+        "cooling_fan": {
+          "type": "boolean"
+        },
+        "moveout": {
+          "properties": {
+            "total": {
+              "type": "long"
+            },
+            "female": {
+              "type": "long"
+            },
+            "male": {
+              "type": "long"
+            }
+          }
+        },
+        "type_name": {
+          "copy_to": [
+            "fullsearch"
+          ],
+          "search_analyzer": "standard",
+          "analyzer": "edgengram_analyzer",
+          "fields": {
+            "ko": {
+              "search_analyzer": "standard",
+              "analyzer": "nori_analyzer",
+              "type": "text"
+            },
+            "th": {
+              "search_analyzer": "standard",
+              "analyzer": "thai",
+              "type": "text"
+            },
+            "en": {
+              "search_analyzer": "standard",
+              "analyzer": "english",
+              "type": "text"
+            },
+            "cn": {
+              "search_analyzer": "standard",
+              "analyzer": "smartcn",
+              "type": "text"
+            },
+            "id": {
+              "search_analyzer": "standard",
+              "analyzer": "indonesian",
+              "type": "text"
+            }
+          },
+          "type": "text"
+        },
+        "floor_type_name": {
+          "copy_to": [
+            "fullsearch"
+          ],
+          "type": "text"
+        },
+        "movein": {
+          "properties": {
+            "total": {
+              "type": "long"
+            },
+            "female": {
+              "type": "long"
+            },
+            "male": {
+              "type": "long"
+            }
+          }
+        },
+        "chickin": {
+          "properties": {
+            "total": {
+              "type": "long"
+            },
+            "female": {
+              "type": "long"
+            },
+            "male": {
+              "type": "long"
+            }
+          }
+        },
+        "feeder": {
+          "properties": {
+            "name": {
+              "type": "text"
+            },
+            "type": {
+              "type": "keyword"
+            }
+          }
+        },
+        "length": {
+          "type": "float"
+        },
+        "nest": {
+          "properties": {
+            "type_name": {
+              "copy_to": [
+                "fullsearch"
+              ],
+              "type": "text"
+            },
+            "qty": {
+              "type": "long"
+            },
+            "type": {
+              "type": "keyword"
+            }
+          }
+        },
+        "chickout": {
+          "properties": {
+            "total": {
+              "type": "long"
+            },
+            "female": {
+              "type": "long"
+            },
+            "male": {
+              "type": "long"
+            }
+          }
+        },
+        "type": {
+          "type": "keyword"
+        },
+        "capacity": {
+          "type": "long"
+        },
+        "hh_id": {
+          "fields": {
+            "ngram": {
+              "search_analyzer": "standard",
+              "analyzer": "ngram_analyzer",
+              "type": "text"
+            }
+          },
+          "type": "keyword"
+        },
+        "fan": {
+          "type": "boolean"
+        },
+        "laying_time_hen_pop": {
+          "type": "long"
+        },
+        "drinker": {
+          "properties": {
+            "name": {
+              "type": "text"
+            },
+            "type": {
+              "type": "keyword"
+            }
+          }
+        },
+        "width": {
+          "type": "float"
+        },
+        "floor_type": {
+          "type": "keyword"
+        }
+      }
+    },
+    "move_hist": {
+      "properties": {
+        "out_female_total": {
+          "type": "long"
+        },
+        "reason": {
+          "properties": {
+            "reason": {
+              "type": "nested",
+              "properties": {
+                "seq_no": {
+                  "type": "keyword"
+                },
+                "reason": {
+                  "copy_to": [
+                    "fullsearch"
+                  ],
+                  "search_analyzer": "standard",
+                  "analyzer": "edgengram_analyzer",
+                  "fields": {
+                    "ko": {
+                      "search_analyzer": "standard",
+                      "analyzer": "nori_analyzer",
+                      "type": "text"
+                    },
+                    "th": {
+                      "search_analyzer": "standard",
+                      "analyzer": "thai",
+                      "type": "text"
+                    },
+                    "en": {
+                      "search_analyzer": "standard",
+                      "analyzer": "english",
+                      "type": "text"
+                    },
+                    "cn": {
+                      "search_analyzer": "standard",
+                      "analyzer": "smartcn",
+                      "type": "text"
+                    },
+                    "id": {
+                      "search_analyzer": "standard",
+                      "analyzer": "indonesian",
+                      "type": "text"
+                    }
+                  },
+                  "type": "text"
+                }
+              }
+            },
+            "move_date": {
+              "format": "yyyyMMddHHmmss||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||strict_date_optional_time||epoch_millis",
+              "type": "date"
+            }
+          }
+        },
+        "move_date": {
+          "type": "date"
+        },
+        "in_male_total": {
+          "type": "long"
+        },
+        "out_male_total": {
+          "type": "long"
+        },
+        "in_female_total": {
+          "type": "long"
+        }
+      }
+    },
+    "std_sc_cum_list": {
+      "type": "nested",
+      "properties": {
+        "on_day": {
+          "type": "boolean"
+        },
+        "age_week": {
+          "type": "integer"
+        },
+        "value": {
+          "type": "float"
+        },
+        "age": {
+          "type": "integer"
+        }
+      }
+    },
+    "std_ep_cum_list": {
+      "type": "nested",
+      "properties": {
+        "on_day": {
+          "type": "boolean"
+        },
+        "age_week": {
+          "type": "integer"
+        },
+        "value": {
+          "type": "float"
+        },
+        "age": {
+          "type": "integer"
+        }
+      }
+    },
+    "std_dep_cum_m_list": {
+      "type": "nested",
+      "properties": {
+        "on_day": {
+          "type": "boolean"
+        },
+        "age_week": {
+          "type": "integer"
+        },
+        "value": {
+          "type": "float"
+        },
+        "age": {
+          "type": "integer"
+        }
+      }
+    },
+    "std_feed_amt_f_list": {
+      "type": "nested",
+      "properties": {
+        "on_day": {
+          "type": "boolean"
+        },
+        "age_week": {
+          "type": "integer"
+        },
+        "value": {
+          "type": "float"
+        },
+        "age": {
+          "type": "integer"
+        }
+      }
+    }
+  }
+}

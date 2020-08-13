@@ -34,13 +34,13 @@ public class Breeding3HatcheryRecvServiceImpl extends AbstractEtlService {
 	public String post(CommandMap commandMap) throws Exception {
 
 		// Mandatory - RDB 
-		String ns = "";
-		String nsId = "";
+		String ns = "newegg.breeding.hatcheryRecv";
+		String nsId = "etlQuery";
 		QueryMap queryMap = new QueryMap();
 
 		// Mandatory - ES Bulk 
-		String index_meta = "";
-		String field_name = "";
+		String index_meta = "index_meta";
+		String field_name = "cj_chickienfarm_ps_idx";
 
 		// 1. Extract&Transfer From RDB
 		Object result = QueryFactory.execute(ns, nsId, queryMap);
@@ -55,10 +55,10 @@ public class Breeding3HatcheryRecvServiceImpl extends AbstractEtlService {
 
 		// 3. Check Response
 		String res = (EntityUtils.toString(response.getEntity()));
-		JSONObject object = new JSONObject(res);
-		log.debug("ES Result : {}", object.toString(2));
+		// JSONObject object = new JSONObject(res);
+		// log.debug("ES Result : {}", object.toString(2));
 		
-		return object.toString(2);
+		return res;
 	}
 
 }

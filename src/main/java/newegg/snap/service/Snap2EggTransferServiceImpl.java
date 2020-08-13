@@ -34,8 +34,8 @@ public class Snap2EggTransferServiceImpl extends AbstractEtlService {
 	public String post(CommandMap commandMap) throws Exception {
 
 		// Mandatory - RDB 
-		String ns = "";
-		String nsId = "";
+		String ns = "newegg.snap.eggTransfer";
+		String nsId = "etlQuery";
 
 		// Mandatory - ES Bulk 
 		String index_meta = "";
@@ -55,10 +55,10 @@ public class Snap2EggTransferServiceImpl extends AbstractEtlService {
 
 		// 3. Check Response
 		String res = (EntityUtils.toString(response.getEntity()));
-		JSONObject object = new JSONObject(res);
-		log.debug("ES Result : {}", object.toString(2));
+		// JSONObject object = new JSONObject(res);
+		// log.debug("ES Result : {}", object.toString(2));
 		
-		return object.toString(2);
+		return res;
 	}
 
 }

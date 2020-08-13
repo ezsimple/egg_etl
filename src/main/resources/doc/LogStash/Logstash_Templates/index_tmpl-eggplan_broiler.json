@@ -1,0 +1,1792 @@
+{
+  "aliases": {
+    "chickenfarm-broiler-idx": {}
+  },
+  "index_patterns": [
+    "cj-chickenfarm-broiler-idx*"
+  ],
+  "mappings": {
+    "properties": {
+      "broiler_log": {
+        "properties": {
+          "age_day": {
+            "type": "short"
+          },
+          "age_week": {
+            "type": "short"
+          },
+          "age_week_last_day": {
+            "format": "yyyyMMddHHmmss||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||strict_date_optional_time||epoch_millis",
+            "type": "date"
+          },
+          "bw": {
+            "properties": {
+              "act": {
+                "type": "float"
+              },
+              "std": {
+                "type": "float"
+              }
+            }
+          },
+          "chickin": {
+            "type": "long"
+          },
+          "current": {
+            "type": "long"
+          },
+          "current_cum": {
+            "type": "long"
+          },
+          "depl": {
+            "properties": {
+              "abnormal": {
+                "type": "long"
+              },
+              "claim": {
+                "type": "long"
+              },
+              "culling": {
+                "type": "long"
+              },
+              "culling_cum": {
+                "type": "long"
+              },
+              "death": {
+                "type": "long"
+              },
+              "death_cum": {
+                "type": "long"
+              },
+              "dry_leg": {
+                "type": "long"
+              },
+              "ompal": {
+                "type": "long"
+              },
+              "total": {
+                "type": "long"
+              },
+              "total_cum": {
+                "type": "long"
+              },
+              "weak": {
+                "type": "long"
+              }
+            }
+          },
+          "depl_ratio": {
+            "properties": {
+              "act": {
+                "type": "float"
+              },
+              "act_cum": {
+                "type": "float"
+              },
+              "std": {
+                "type": "float"
+              }
+            }
+          },
+          "fcr": {
+            "properties": {
+              "act": {
+                "type": "float"
+              },
+              "std": {
+                "type": "float"
+              }
+            }
+          },
+          "feed": {
+            "properties": {
+              "feed_date": {
+                "format": "yyyyMMddHHmmss||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||strict_date_optional_time||epoch_millis",
+                "type": "date"
+              },
+              "point_feed": {
+                "properties": {
+                  "act": {
+                    "type": "float"
+                  },
+                  "act_cum": {
+                    "type": "float"
+                  },
+                  "std": {
+                    "type": "float"
+                  }
+                }
+              },
+              "remarks": {
+                "analyzer": "edgengram_analyzer",
+                "copy_to": [
+                  "fullsearch"
+                ],
+                "fields": {
+                  "cn": {
+                    "analyzer": "smartcn",
+                    "search_analyzer": "standard",
+                    "type": "text"
+                  },
+                  "en": {
+                    "analyzer": "english",
+                    "search_analyzer": "standard",
+                    "type": "text"
+                  },
+                  "id": {
+                    "analyzer": "indonesian",
+                    "search_analyzer": "standard",
+                    "type": "text"
+                  },
+                  "ko": {
+                    "analyzer": "nori_analyzer",
+                    "search_analyzer": "standard",
+                    "type": "text"
+                  },
+                  "th": {
+                    "analyzer": "thai",
+                    "search_analyzer": "standard",
+                    "type": "text"
+                  }
+                },
+                "search_analyzer": "standard",
+                "type": "text"
+              },
+              "total": {
+                "type": "float"
+              },
+              "total_cum": {
+                "type": "float"
+              }
+            }
+          },
+          "feed_hist": {
+            "properties": {
+              "feed_date": {
+                "format": "yyyyMMddHHmmss||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||strict_date_optional_time||epoch_millis",
+                "type": "date"
+              },
+              "feed_hist": {
+                "properties": {
+                  "feed": {
+                    "properties": {
+                      "feed_code": {
+                        "fields": {
+                          "ngram": {
+                            "analyzer": "ngram_analyzer",
+                            "search_analyzer": "standard",
+                            "type": "text"
+                          }
+                        },
+                        "type": "keyword"
+                      },
+                      "feed_name": {
+                        "analyzer": "edgengram_analyzer",
+                        "copy_to": [
+                          "fullsearch"
+                        ],
+                        "fields": {
+                          "cn": {
+                            "analyzer": "smartcn",
+                            "search_analyzer": "standard",
+                            "type": "text"
+                          },
+                          "en": {
+                            "analyzer": "english",
+                            "search_analyzer": "standard",
+                            "type": "text"
+                          },
+                          "id": {
+                            "analyzer": "indonesian",
+                            "search_analyzer": "standard",
+                            "type": "text"
+                          },
+                          "ko": {
+                            "analyzer": "nori_analyzer",
+                            "search_analyzer": "standard",
+                            "type": "text"
+                          },
+                          "th": {
+                            "analyzer": "thai",
+                            "search_analyzer": "standard",
+                            "type": "text"
+                          }
+                        },
+                        "search_analyzer": "standard",
+                        "type": "text"
+                      },
+                      "seg_no": {
+                        "type": "keyword"
+                      },
+                      "use_amount": {
+                        "type": "float"
+                      },
+                      "using": {
+                        "fields": {
+                          "ngram": {
+                            "analyzer": "ngram_analyzer",
+                            "search_analyzer": "standard",
+                            "type": "text"
+                          }
+                        },
+                        "type": "keyword"
+                      },
+                      "using_name": {
+                        "analyzer": "edgengram_analyzer",
+                        "copy_to": [
+                          "fullsearch"
+                        ],
+                        "fields": {
+                          "cn": {
+                            "analyzer": "smartcn",
+                            "search_analyzer": "standard",
+                            "type": "text"
+                          },
+                          "en": {
+                            "analyzer": "english",
+                            "search_analyzer": "standard",
+                            "type": "text"
+                          },
+                          "id": {
+                            "analyzer": "indonesian",
+                            "search_analyzer": "standard",
+                            "type": "text"
+                          },
+                          "ko": {
+                            "analyzer": "nori_analyzer",
+                            "search_analyzer": "standard",
+                            "type": "text"
+                          },
+                          "th": {
+                            "analyzer": "thai",
+                            "search_analyzer": "standard",
+                            "type": "text"
+                          }
+                        },
+                        "search_analyzer": "standard",
+                        "type": "text"
+                      }
+                    }
+                  }
+                },
+                "type": "nested"
+              }
+            }
+          },
+          "humidity": {
+            "properties": {
+              "in": {
+                "type": "float"
+              },
+              "mtime": {
+                "format": "HHmm||HH:mm||hour_minute||strict_hour_minute",
+                "type": "date"
+              },
+              "out": {
+                "type": "float"
+              }
+            }
+          },
+          "ip": {
+            "properties": {
+              "act": {
+                "type": "float"
+              },
+              "std": {
+                "type": "float"
+              }
+            }
+          },
+          "light": {
+            "properties": {
+              "off": {
+                "format": "HHmm||HH:mm||hour_minute||strict_hour_minute",
+                "type": "date"
+              },
+              "on": {
+                "format": "HHmm||HH:mm||hour_minute||strict_hour_minute",
+                "type": "date"
+              }
+            }
+          },
+          "medicine": {
+            "properties": {
+              "medi_date": {
+                "format": "yyyyMMddHHmmss||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||strict_date_optional_time||epoch_millis",
+                "type": "date"
+              },
+              "medi_hist": {
+                "properties": {
+                  "amount": {
+                    "type": "float"
+                  },
+                  "code": {
+                    "fields": {
+                      "ngram": {
+                        "analyzer": "ngram_analyzer",
+                        "search_analyzer": "standard",
+                        "type": "text"
+                      }
+                    },
+                    "type": "keyword"
+                  },
+                  "name": {
+                    "analyzer": "edgengram_analyzer",
+                    "copy_to": "fullsearch",
+                    "fields": {
+                      "cn": {
+                        "analyzer": "smartcn",
+                        "search_analyzer": "standard",
+                        "type": "text"
+                      },
+                      "en": {
+                        "analyzer": "english",
+                        "search_analyzer": "standard",
+                        "type": "text"
+                      },
+                      "id": {
+                        "analyzer": "indonesian",
+                        "search_analyzer": "standard",
+                        "type": "text"
+                      },
+                      "ko": {
+                        "analyzer": "nori_analyzer",
+                        "search_analyzer": "standard",
+                        "type": "text"
+                      },
+                      "th": {
+                        "analyzer": "thai",
+                        "search_analyzer": "standard",
+                        "type": "text"
+                      }
+                    },
+                    "search_analyzer": "standard",
+                    "type": "text"
+                  },
+                  "seq_no": {
+                    "type": "keyword"
+                  },
+                  "unit": {
+                    "type": "text"
+                  },
+                  "using": {
+                    "fields": {
+                      "ngram": {
+                        "analyzer": "ngram_analyzer",
+                        "search_analyzer": "standard",
+                        "type": "text"
+                      }
+                    },
+                    "type": "keyword"
+                  },
+                  "using_name": {
+                    "analyzer": "edgengram_analyzer",
+                    "fields": {
+                      "cn": {
+                        "analyzer": "smartcn",
+                        "search_analyzer": "standard",
+                        "type": "text"
+                      },
+                      "en": {
+                        "analyzer": "english",
+                        "search_analyzer": "standard",
+                        "type": "text"
+                      },
+                      "id": {
+                        "analyzer": "indonesian",
+                        "search_analyzer": "standard",
+                        "type": "text"
+                      },
+                      "ko": {
+                        "analyzer": "nori_analyzer",
+                        "search_analyzer": "standard",
+                        "type": "text"
+                      },
+                      "th": {
+                        "analyzer": "thai",
+                        "search_analyzer": "standard",
+                        "type": "text"
+                      }
+                    },
+                    "search_analyzer": "standard",
+                    "type": "text"
+                  }
+                },
+                "type": "nested"
+              },
+              "remark": {
+                "analyzer": "edgengram_analyzer",
+                "copy_to": "fullsearch",
+                "fields": {
+                  "cn": {
+                    "analyzer": "smartcn",
+                    "search_analyzer": "standard",
+                    "type": "text"
+                  },
+                  "en": {
+                    "analyzer": "english",
+                    "search_analyzer": "standard",
+                    "type": "text"
+                  },
+                  "id": {
+                    "analyzer": "indonesian",
+                    "search_analyzer": "standard",
+                    "type": "text"
+                  },
+                  "ko": {
+                    "analyzer": "nori_analyzer",
+                    "search_analyzer": "standard",
+                    "type": "text"
+                  },
+                  "th": {
+                    "analyzer": "thai",
+                    "search_analyzer": "standard",
+                    "type": "text"
+                  }
+                },
+                "search_analyzer": "standard",
+                "type": "text"
+              }
+            }
+          },
+          "temperature": {
+            "properties": {
+              "in": {
+                "type": "float"
+              },
+              "mtime": {
+                "format": "HHmm||HH:mm||hour_minute||strict_hour_minute",
+                "type": "date"
+              },
+              "out": {
+                "type": "float"
+              }
+            }
+          },
+          "uniformity": {
+            "type": "float"
+          },
+          "vaccine": {
+            "properties": {
+              "remark": {
+                "analyzer": "edgengram_analyzer",
+                "copy_to": "fullsearch",
+                "fields": {
+                  "cn": {
+                    "analyzer": "smartcn",
+                    "search_analyzer": "standard",
+                    "type": "text"
+                  },
+                  "en": {
+                    "analyzer": "english",
+                    "search_analyzer": "standard",
+                    "type": "text"
+                  },
+                  "id": {
+                    "analyzer": "indonesian",
+                    "search_analyzer": "standard",
+                    "type": "text"
+                  },
+                  "ko": {
+                    "analyzer": "nori_analyzer",
+                    "search_analyzer": "standard",
+                    "type": "text"
+                  },
+                  "th": {
+                    "analyzer": "thai",
+                    "search_analyzer": "standard",
+                    "type": "text"
+                  }
+                },
+                "search_analyzer": "standard",
+                "type": "text"
+              },
+              "vacc_date": {
+                "format": "yyyyMMddHHmmss||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||strict_date_optional_time||epoch_millis",
+                "type": "date"
+              },
+              "vacc_hist": {
+                "properties": {
+                  "amount": {
+                    "type": "float"
+                  },
+                  "code": {
+                    "fields": {
+                      "ngram": {
+                        "analyzer": "ngram_analyzer",
+                        "search_analyzer": "standard",
+                        "type": "text"
+                      }
+                    },
+                    "type": "keyword"
+                  },
+                  "name": {
+                    "analyzer": "edgengram_analyzer",
+                    "fields": {
+                      "cn": {
+                        "analyzer": "smartcn",
+                        "search_analyzer": "standard",
+                        "type": "text"
+                      },
+                      "en": {
+                        "analyzer": "english",
+                        "search_analyzer": "standard",
+                        "type": "text"
+                      },
+                      "id": {
+                        "analyzer": "indonesian",
+                        "search_analyzer": "standard",
+                        "type": "text"
+                      },
+                      "ko": {
+                        "analyzer": "nori_analyzer",
+                        "search_analyzer": "standard",
+                        "type": "text"
+                      },
+                      "th": {
+                        "analyzer": "thai",
+                        "search_analyzer": "standard",
+                        "type": "text"
+                      }
+                    },
+                    "search_analyzer": "standard",
+                    "type": "text"
+                  },
+                  "seq_no": {
+                    "type": "keyword"
+                  },
+                  "unit": {
+                    "type": "text"
+                  },
+                  "using": {
+                    "type": "keyword"
+                  },
+                  "using_name": {
+                    "analyzer": "edgengram_analyzer",
+                    "fields": {
+                      "cn": {
+                        "analyzer": "smartcn",
+                        "search_analyzer": "standard",
+                        "type": "text"
+                      },
+                      "en": {
+                        "analyzer": "english",
+                        "search_analyzer": "standard",
+                        "type": "text"
+                      },
+                      "id": {
+                        "analyzer": "indonesian",
+                        "search_analyzer": "standard",
+                        "type": "text"
+                      },
+                      "ko": {
+                        "analyzer": "nori_analyzer",
+                        "search_analyzer": "standard",
+                        "type": "text"
+                      },
+                      "th": {
+                        "analyzer": "thai",
+                        "search_analyzer": "standard",
+                        "type": "text"
+                      }
+                    },
+                    "search_analyzer": "standard",
+                    "type": "text"
+                  }
+                },
+                "type": "nested"
+              }
+            }
+          },
+          "veterinarian": {
+            "analyzer": "edgengram_analyzer",
+            "fields": {
+              "cn": {
+                "analyzer": "smartcn",
+                "search_analyzer": "standard",
+                "type": "text"
+              },
+              "en": {
+                "analyzer": "english",
+                "search_analyzer": "standard",
+                "type": "text"
+              },
+              "id": {
+                "analyzer": "indonesian",
+                "search_analyzer": "standard",
+                "type": "text"
+              },
+              "ko": {
+                "analyzer": "nori_analyzer",
+                "search_analyzer": "standard",
+                "type": "text"
+              },
+              "th": {
+                "analyzer": "thai",
+                "search_analyzer": "standard",
+                "type": "text"
+              }
+            },
+            "search_analyzer": "standard",
+            "type": "text"
+          },
+          "water": {
+            "type": "float"
+          },
+          "work_date": {
+            "format": "yyyyMMddHHmmss||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||strict_date_optional_time||epoch_millis",
+            "type": "date"
+          }
+        }
+      },
+      "chickout": {
+        "properties": {
+          "chickout_dtl": {
+            "properties": {
+              "culling_qty": {
+                "type": "long"
+              },
+              "culling_weight": {
+                "type": "float"
+              },
+              "customer": {
+                "properties": {
+                  "code": {
+                    "fields": {
+                      "ngram": {
+                        "analyzer": "ngram_analyzer",
+                        "search_analyzer": "standard",
+                        "type": "text"
+                      }
+                    },
+                    "type": "keyword"
+                  },
+                  "kind": {
+                    "fields": {
+                      "ngram": {
+                        "analyzer": "ngram_analyzer",
+                        "search_analyzer": "standard",
+                        "type": "text"
+                      }
+                    },
+                    "type": "keyword"
+                  },
+                  "kind_name": {
+                    "analyzer": "edgengram_analyzer",
+                    "copy_to": [
+                      "fullsearch"
+                    ],
+                    "fields": {
+                      "cn": {
+                        "analyzer": "smartcn",
+                        "search_analyzer": "standard",
+                        "type": "text"
+                      },
+                      "en": {
+                        "analyzer": "english",
+                        "search_analyzer": "standard",
+                        "type": "text"
+                      },
+                      "id": {
+                        "analyzer": "indonesian",
+                        "search_analyzer": "standard",
+                        "type": "text"
+                      },
+                      "ko": {
+                        "analyzer": "nori_analyzer",
+                        "search_analyzer": "standard",
+                        "type": "text"
+                      },
+                      "th": {
+                        "analyzer": "thai",
+                        "search_analyzer": "standard",
+                        "type": "text"
+                      }
+                    },
+                    "search_analyzer": "standard",
+                    "type": "text"
+                  },
+                  "name": {
+                    "analyzer": "edgengram_analyzer",
+                    "copy_to": [
+                      "fullsearch"
+                    ],
+                    "fields": {
+                      "cn": {
+                        "analyzer": "smartcn",
+                        "search_analyzer": "standard",
+                        "type": "text"
+                      },
+                      "en": {
+                        "analyzer": "english",
+                        "search_analyzer": "standard",
+                        "type": "text"
+                      },
+                      "id": {
+                        "analyzer": "indonesian",
+                        "search_analyzer": "standard",
+                        "type": "text"
+                      },
+                      "ko": {
+                        "analyzer": "nori_analyzer",
+                        "search_analyzer": "standard",
+                        "type": "text"
+                      },
+                      "th": {
+                        "analyzer": "thai",
+                        "search_analyzer": "standard",
+                        "type": "text"
+                      }
+                    },
+                    "search_analyzer": "standard",
+                    "type": "text"
+                  },
+                  "short_name": {
+                    "copy_to": [
+                      "fullsearch"
+                    ],
+                    "fields": {
+                      "ngram": {
+                        "analyzer": "ngram_analyzer",
+                        "search_analyzer": "standard",
+                        "type": "text"
+                      }
+                    },
+                    "type": "text"
+                  }
+                }
+              },
+              "harvest_qty": {
+                "type": "long"
+              },
+              "harvest_weight": {
+                "type": "float"
+              },
+              "remarks": {
+                "analyzer": "edgengram_analyzer",
+                "copy_to": [
+                  "fulltext"
+                ],
+                "fields": {
+                  "cn": {
+                    "analyzer": "smartcn",
+                    "search_analyzer": "standard",
+                    "type": "text"
+                  },
+                  "en": {
+                    "analyzer": "english",
+                    "search_analyzer": "standard",
+                    "type": "text"
+                  },
+                  "id": {
+                    "analyzer": "indonesian",
+                    "search_analyzer": "standard",
+                    "type": "text"
+                  },
+                  "ko": {
+                    "analyzer": "nori_analyzer",
+                    "search_analyzer": "standard",
+                    "type": "text"
+                  },
+                  "th": {
+                    "analyzer": "thai",
+                    "search_analyzer": "standard",
+                    "type": "text"
+                  }
+                },
+                "search_analyzer": "standard",
+                "type": "text"
+              },
+              "s_order_no": {
+                "fields": {
+                  "ngram": {
+                    "analyzer": "ngram_analyzer",
+                    "search_analyzer": "standard",
+                    "type": "text"
+                  }
+                },
+                "type": "keyword"
+              },
+              "seq_no": {
+                "type": "keyword"
+              },
+              "truck_no": {
+                "fields": {
+                  "ngram": {
+                    "analyzer": "ngram_analyzer",
+                    "search_analyzer": "standard",
+                    "type": "text"
+                  }
+                },
+                "type": "keyword"
+              }
+            },
+            "type": "nested"
+          },
+          "chickout_edate": {
+            "format": "yyyyMMddHHmmss||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||strict_date_optional_time||epoch_millis",
+            "type": "date"
+          },
+          "chickout_sdate": {
+            "format": "yyyyMMddHHmmss||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||strict_date_optional_time||epoch_millis",
+            "type": "date"
+          },
+          "qty": {
+            "type": "long"
+          },
+          "qty_cum": {
+            "type": "long"
+          },
+          "weight": {
+            "type": "float"
+          },
+          "weight_cum": {
+            "type": "float"
+          }
+        }
+      },
+      "farm": {
+        "properties": {
+          "addr1": {
+            "analyzer": "edgengram_analyzer",
+            "copy_to": [
+              "fullsearch"
+            ],
+            "fields": {
+              "cn": {
+                "analyzer": "smartcn",
+                "search_analyzer": "standard",
+                "type": "text"
+              },
+              "en": {
+                "analyzer": "english",
+                "search_analyzer": "standard",
+                "type": "text"
+              },
+              "id": {
+                "analyzer": "indonesian",
+                "search_analyzer": "standard",
+                "type": "text"
+              },
+              "ko": {
+                "analyzer": "nori_analyzer",
+                "search_analyzer": "standard",
+                "type": "text"
+              },
+              "th": {
+                "analyzer": "thai",
+                "search_analyzer": "standard",
+                "type": "text"
+              }
+            },
+            "search_analyzer": "standard",
+            "type": "text"
+          },
+          "addr2": {
+            "analyzer": "edgengram_analyzer",
+            "copy_to": [
+              "fullsearch"
+            ],
+            "fields": {
+              "cn": {
+                "analyzer": "smartcn",
+                "search_analyzer": "standard",
+                "type": "text"
+              },
+              "en": {
+                "analyzer": "english",
+                "search_analyzer": "standard",
+                "type": "text"
+              },
+              "id": {
+                "analyzer": "indonesian",
+                "search_analyzer": "standard",
+                "type": "text"
+              },
+              "ko": {
+                "analyzer": "nori_analyzer",
+                "search_analyzer": "standard",
+                "type": "text"
+              },
+              "th": {
+                "analyzer": "thai",
+                "search_analyzer": "standard",
+                "type": "text"
+              }
+            },
+            "search_analyzer": "standard",
+            "type": "text"
+          },
+          "class": {
+            "copy_to": [
+              "fullsearch"
+            ],
+            "fields": {
+              "ngram": {
+                "analyzer": "ngram_analyzer",
+                "search_analyzer": "standard",
+                "type": "text"
+              }
+            },
+            "type": "keyword"
+          },
+          "class_name": {
+            "copy_to": [
+              "fullsearch"
+            ],
+            "type": "text"
+          },
+          "code": {
+            "copy_to": [
+              "fullsearch"
+            ],
+            "fields": {
+              "ngram": {
+                "analyzer": "ngram_analyzer",
+                "search_analyzer": "standard",
+                "type": "text"
+              }
+            },
+            "type": "keyword"
+          },
+          "d_name": {
+            "analyzer": "edgengram_analyzer",
+            "copy_to": [
+              "fullsearch"
+            ],
+            "fields": {
+              "cn": {
+                "analyzer": "smartcn",
+                "search_analyzer": "standard",
+                "type": "text"
+              },
+              "en": {
+                "analyzer": "english",
+                "search_analyzer": "standard",
+                "type": "text"
+              },
+              "id": {
+                "analyzer": "indonesian",
+                "search_analyzer": "standard",
+                "type": "text"
+              },
+              "ko": {
+                "analyzer": "nori_analyzer",
+                "search_analyzer": "standard",
+                "type": "text"
+              },
+              "th": {
+                "analyzer": "thai",
+                "search_analyzer": "standard",
+                "type": "text"
+              }
+            },
+            "search_analyzer": "standard",
+            "type": "text"
+          },
+          "division": {
+            "fields": {
+              "ngram": {
+                "analyzer": "ngram_analyzer",
+                "search_analyzer": "standard",
+                "type": "text"
+              }
+            },
+            "type": "keyword"
+          },
+          "location": {
+            "type": "geo_point"
+          },
+          "name": {
+            "analyzer": "edgengram_analyzer",
+            "copy_to": [
+              "fullsearch"
+            ],
+            "fields": {
+              "cn": {
+                "analyzer": "smartcn",
+                "search_analyzer": "standard",
+                "type": "text"
+              },
+              "en": {
+                "analyzer": "english",
+                "search_analyzer": "standard",
+                "type": "text"
+              },
+              "id": {
+                "analyzer": "indonesian",
+                "search_analyzer": "standard",
+                "type": "text"
+              },
+              "ko": {
+                "analyzer": "nori_analyzer",
+                "search_analyzer": "standard",
+                "type": "text"
+              },
+              "th": {
+                "analyzer": "thai",
+                "search_analyzer": "standard",
+                "type": "text"
+              }
+            },
+            "search_analyzer": "standard",
+            "type": "text"
+          },
+          "r_name": {
+            "analyzer": "edgengram_analyzer",
+            "copy_to": [
+              "fullsearch"
+            ],
+            "fields": {
+              "cn": {
+                "analyzer": "smartcn",
+                "search_analyzer": "standard",
+                "type": "text"
+              },
+              "en": {
+                "analyzer": "english",
+                "search_analyzer": "standard",
+                "type": "text"
+              },
+              "id": {
+                "analyzer": "indonesian",
+                "search_analyzer": "standard",
+                "type": "text"
+              },
+              "ko": {
+                "analyzer": "nori_analyzer",
+                "search_analyzer": "standard",
+                "type": "text"
+              },
+              "th": {
+                "analyzer": "thai",
+                "search_analyzer": "standard",
+                "type": "text"
+              }
+            },
+            "search_analyzer": "standard",
+            "type": "text"
+          },
+          "region": {
+            "fields": {
+              "ngram": {
+                "analyzer": "ngram_analyzer",
+                "search_analyzer": "standard",
+                "type": "text"
+              }
+            },
+            "type": "keyword"
+          },
+          "s_name": {
+            "analyzer": "edgengram_analyzer",
+            "copy_to": [
+              "fullsearch"
+            ],
+            "fields": {
+              "cn": {
+                "analyzer": "smartcn",
+                "search_analyzer": "standard",
+                "type": "text"
+              },
+              "en": {
+                "analyzer": "english",
+                "search_analyzer": "standard",
+                "type": "text"
+              },
+              "id": {
+                "analyzer": "indonesian",
+                "search_analyzer": "standard",
+                "type": "text"
+              },
+              "ko": {
+                "analyzer": "nori_analyzer",
+                "search_analyzer": "standard",
+                "type": "text"
+              },
+              "th": {
+                "analyzer": "thai",
+                "search_analyzer": "standard",
+                "type": "text"
+              }
+            },
+            "search_analyzer": "standard",
+            "type": "text"
+          },
+          "short_code": {
+            "copy_to": [
+              "fullsearch"
+            ],
+            "fields": {
+              "ngram": {
+                "analyzer": "ngram_analyzer",
+                "search_analyzer": "standard",
+                "type": "text"
+              }
+            },
+            "type": "keyword"
+          },
+          "status": {
+            "type": "keyword"
+          },
+          "sub_region": {
+            "fields": {
+              "ngram": {
+                "analyzer": "ngram_analyzer",
+                "search_analyzer": "standard",
+                "type": "text"
+              }
+            },
+            "type": "keyword"
+          },
+          "zip": {
+            "type": "keyword"
+          }
+        }
+      },
+      "fullsearch": {
+        "analyzer": "edgengram_analyzer",
+        "fields": {
+          "cn": {
+            "analyzer": "smartcn",
+            "search_analyzer": "standard",
+            "type": "text"
+          },
+          "en": {
+            "analyzer": "english",
+            "search_analyzer": "standard",
+            "type": "text"
+          },
+          "id": {
+            "analyzer": "indonesian",
+            "search_analyzer": "standard",
+            "type": "text"
+          },
+          "ko": {
+            "analyzer": "nori_analyzer",
+            "search_analyzer": "standard",
+            "type": "text"
+          },
+          "th": {
+            "analyzer": "thai",
+            "search_analyzer": "standard",
+            "type": "text"
+          }
+        },
+        "search_analyzer": "standard",
+        "type": "text"
+      },
+      "info_type": {
+        "copy_to": [
+          "fullsearch"
+        ],
+        "type": "keyword"
+      },
+      "project": {
+        "properties": {
+          "class": {
+            "properties": {
+              "class": {
+                "fields": {
+                  "ngram": {
+                    "analyzer": "ngram_analyzer",
+                    "search_analyzer": "standard",
+                    "type": "text"
+                  }
+                },
+                "type": "keyword"
+              },
+              "name": {
+                "type": "text"
+              }
+            }
+          },
+          "code": {
+            "fields": {
+              "ngram": {
+                "analyzer": "ngram_analyzer",
+                "search_analyzer": "standard",
+                "type": "text"
+              }
+            },
+            "type": "keyword"
+          },
+          "end_date": {
+            "format": "yyyyMMddHHmmss||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||strict_date_optional_time||epoch_millis",
+            "type": "date"
+          },
+          "name": {
+            "type": "text"
+          },
+          "ppl": {
+            "fields": {
+              "ngram": {
+                "analyzer": "ngram_analyzer",
+                "search_analyzer": "standard",
+                "type": "text"
+              }
+            },
+            "type": "keyword"
+          },
+          "remarks": {
+            "analyzer": "edgengram_analyzer",
+            "copy_to": [
+              "fullsearch"
+            ],
+            "fields": {
+              "cn": {
+                "analyzer": "smartcn",
+                "search_analyzer": "standard",
+                "type": "text"
+              },
+              "en": {
+                "analyzer": "english",
+                "search_analyzer": "standard",
+                "type": "text"
+              },
+              "id": {
+                "analyzer": "indonesian",
+                "search_analyzer": "standard",
+                "type": "text"
+              },
+              "ko": {
+                "analyzer": "nori_analyzer",
+                "search_analyzer": "standard",
+                "type": "text"
+              },
+              "th": {
+                "analyzer": "thai",
+                "search_analyzer": "standard",
+                "type": "text"
+              }
+            },
+            "search_analyzer": "standard",
+            "type": "text"
+          },
+          "start_date": {
+            "format": "yyyyMMddHHmmss||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||strict_date_optional_time||epoch_millis",
+            "type": "date"
+          },
+          "status": {
+            "type": "keyword"
+          },
+          "strain": {
+            "properties": {
+              "code": {
+                "fields": {
+                  "ngram": {
+                    "analyzer": "ngram_analyzer",
+                    "search_analyzer": "standard",
+                    "type": "text"
+                  }
+                },
+                "type": "keyword"
+              },
+              "name": {
+                "analyzer": "edgengram_analyzer",
+                "copy_to": [
+                  "fullsearch"
+                ],
+                "fields": {
+                  "cn": {
+                    "analyzer": "smartcn",
+                    "search_analyzer": "standard",
+                    "type": "text"
+                  },
+                  "en": {
+                    "analyzer": "english",
+                    "search_analyzer": "standard",
+                    "type": "text"
+                  },
+                  "id": {
+                    "analyzer": "indonesian",
+                    "search_analyzer": "standard",
+                    "type": "text"
+                  },
+                  "ko": {
+                    "analyzer": "nori_analyzer",
+                    "search_analyzer": "standard",
+                    "type": "text"
+                  },
+                  "th": {
+                    "analyzer": "thai",
+                    "search_analyzer": "standard",
+                    "type": "text"
+                  }
+                },
+                "search_analyzer": "standard",
+                "type": "text"
+              }
+            }
+          }
+        }
+      },
+      "receive": {
+        "properties": {
+          "a_qty": {
+            "type": "long"
+          },
+          "b_qty": {
+            "type": "long"
+          },
+          "customer": {
+            "properties": {
+              "code": {
+                "fields": {
+                  "ngram": {
+                    "analyzer": "ngram_analyzer",
+                    "search_analyzer": "standard",
+                    "type": "text"
+                  }
+                },
+                "type": "keyword"
+              },
+              "kind": {
+                "type": "keyword"
+              },
+              "kind_name": {
+                "type": "text"
+              },
+              "name": {
+                "analyzer": "edgengram_analyzer",
+                "copy_to": [
+                  "fullsearch"
+                ],
+                "fields": {
+                  "cn": {
+                    "analyzer": "smartcn",
+                    "search_analyzer": "standard",
+                    "type": "text"
+                  },
+                  "en": {
+                    "analyzer": "english",
+                    "search_analyzer": "standard",
+                    "type": "text"
+                  },
+                  "id": {
+                    "analyzer": "indonesian",
+                    "search_analyzer": "standard",
+                    "type": "text"
+                  },
+                  "ko": {
+                    "analyzer": "nori_analyzer",
+                    "search_analyzer": "standard",
+                    "type": "text"
+                  },
+                  "th": {
+                    "analyzer": "thai",
+                    "search_analyzer": "standard",
+                    "type": "text"
+                  }
+                },
+                "search_analyzer": "standard",
+                "type": "text"
+              },
+              "short_name": {
+                "copy_to": [
+                  "fullsearch"
+                ],
+                "fields": {
+                  "ngram": {
+                    "analyzer": "ngram_analyzer",
+                    "search_analyzer": "standard",
+                    "type": "text"
+                  }
+                },
+                "type": "keyword"
+              }
+            }
+          },
+          "hatchery": {
+            "properties": {
+              "capacity": {
+                "type": "long"
+              },
+              "id": {
+                "fields": {
+                  "ngram": {
+                    "analyzer": "ngram_analyzer",
+                    "search_analyzer": "standard",
+                    "type": "text"
+                  }
+                },
+                "type": "keyword"
+              },
+              "name": {
+                "analyzer": "edgengram_analyzer",
+                "fields": {
+                  "cn": {
+                    "analyzer": "smartcn",
+                    "search_analyzer": "standard",
+                    "type": "text"
+                  },
+                  "en": {
+                    "analyzer": "english",
+                    "search_analyzer": "standard",
+                    "type": "text"
+                  },
+                  "id": {
+                    "analyzer": "indonesian",
+                    "search_analyzer": "standard",
+                    "type": "text"
+                  },
+                  "ko": {
+                    "analyzer": "nori_analyzer",
+                    "search_analyzer": "standard",
+                    "type": "text"
+                  },
+                  "th": {
+                    "analyzer": "thai",
+                    "search_analyzer": "standard",
+                    "type": "text"
+                  }
+                },
+                "search_analyzer": "standard",
+                "type": "text"
+              },
+              "type": {
+                "fields": {
+                  "ngram": {
+                    "analyzer": "ngram_analyzer",
+                    "search_analyzer": "standard",
+                    "type": "text"
+                  }
+                },
+                "type": "keyword"
+              },
+              "type_name": {
+                "analyzer": "edgengram_analyzer",
+                "copy_to": [
+                  "fullsearch"
+                ],
+                "fields": {
+                  "cn": {
+                    "analyzer": "smartcn",
+                    "search_analyzer": "standard",
+                    "type": "text"
+                  },
+                  "en": {
+                    "analyzer": "english",
+                    "search_analyzer": "standard",
+                    "type": "text"
+                  },
+                  "id": {
+                    "analyzer": "indonesian",
+                    "search_analyzer": "standard",
+                    "type": "text"
+                  },
+                  "ko": {
+                    "analyzer": "nori_analyzer",
+                    "search_analyzer": "standard",
+                    "type": "text"
+                  },
+                  "th": {
+                    "analyzer": "thai",
+                    "search_analyzer": "standard",
+                    "type": "text"
+                  }
+                },
+                "search_analyzer": "standard",
+                "type": "text"
+              }
+            }
+          },
+          "order_no": {
+            "fields": {
+              "ngram": {
+                "analyzer": "ngram_analyzer",
+                "search_analyzer": "standard",
+                "type": "text"
+              }
+            },
+            "type": "keyword"
+          },
+          "others_qty": {
+            "type": "long"
+          },
+          "p_qty": {
+            "type": "long"
+          },
+          "receive_date": {
+            "format": "yyyyMMddHHmmss||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||strict_date_optional_time||epoch_millis",
+            "type": "date"
+          },
+          "receive_no": {
+            "fields": {
+              "ngram": {
+                "analyzer": "ngram_analyzer",
+                "search_analyzer": "standard",
+                "type": "text"
+              }
+            },
+            "type": "keyword"
+          },
+          "recv_qty": {
+            "type": "long"
+          },
+          "remarks": {
+            "analyzer": "edgengram_analyzer",
+            "copy_to": [
+              "fullsearch"
+            ],
+            "fields": {
+              "cn": {
+                "analyzer": "smartcn",
+                "search_analyzer": "standard",
+                "type": "text"
+              },
+              "en": {
+                "analyzer": "english",
+                "search_analyzer": "standard",
+                "type": "text"
+              },
+              "id": {
+                "analyzer": "indonesian",
+                "search_analyzer": "standard",
+                "type": "text"
+              },
+              "ko": {
+                "analyzer": "nori_analyzer",
+                "search_analyzer": "standard",
+                "type": "text"
+              },
+              "th": {
+                "analyzer": "thai",
+                "search_analyzer": "standard",
+                "type": "text"
+              }
+            },
+            "search_analyzer": "standard",
+            "type": "text"
+          },
+          "transfer_date": {
+            "format": "yyyyMMddHHmmss||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||strict_date_optional_time||epoch_millis",
+            "type": "date"
+          },
+          "transfer_no": {
+            "fields": {
+              "ngram": {
+                "analyzer": "ngram_analyzer",
+                "search_analyzer": "standard",
+                "type": "text"
+              }
+            },
+            "type": "keyword"
+          },
+          "transfer_qty": {
+            "type": "long"
+          },
+          "truck_no": {
+            "fields": {
+              "ngram": {
+                "analyzer": "ngram_analyzer",
+                "search_analyzer": "standard",
+                "type": "text"
+              }
+            },
+            "type": "keyword"
+          }
+        }
+      },
+      "std_bw_list": {
+        "properties": {
+          "age": {
+            "type": "integer"
+          },
+          "age_week": {
+            "type": "integer"
+          },
+          "on_day": {
+            "type": "boolean"
+          },
+          "value": {
+            "type": "float"
+          }
+        },
+        "type": "nested"
+      },
+      "std_dep_cum_list": {
+        "properties": {
+          "age": {
+            "type": "integer"
+          },
+          "age_week": {
+            "type": "integer"
+          },
+          "on_day": {
+            "type": "boolean"
+          },
+          "value": {
+            "type": "float"
+          }
+        },
+        "type": "nested"
+      },
+      "std_fcr_list": {
+        "properties": {
+          "age": {
+            "type": "integer"
+          },
+          "age_week": {
+            "type": "integer"
+          },
+          "on_day": {
+            "type": "boolean"
+          },
+          "value": {
+            "type": "float"
+          }
+        },
+        "type": "nested"
+      },
+      "std_intake_cum_list": {
+        "properties": {
+          "age": {
+            "type": "integer"
+          },
+          "age_week": {
+            "type": "integer"
+          },
+          "on_day": {
+            "type": "boolean"
+          },
+          "value": {
+            "type": "float"
+          }
+        },
+        "type": "nested"
+      },
+      "std_ip_list": {
+        "properties": {
+          "age": {
+            "type": "integer"
+          },
+          "age_week": {
+            "type": "integer"
+          },
+          "on_day": {
+            "type": "boolean"
+          },
+          "value": {
+            "type": "float"
+          }
+        },
+        "type": "nested"
+      },
+      "work_date": {
+        "format": "yyyyMMddHHmmss||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||strict_date_optional_time||epoch_millis",
+        "type": "date"
+      }
+    }
+  },
+  "order": 0,
+  "settings": {
+    "analysis": {
+      "analyzer": {
+        "edgengram_analyzer": {
+          "filter": [
+            "edgengram_filter"
+          ],
+          "tokenizer": "whitespace",
+          "type": "custom"
+        },
+        "ngram_analyzer": {
+          "filter": [
+            "2_4_ngram_filter"
+          ],
+          "tokenizer": "whitespace",
+          "type": "custom"
+        },
+        "nori_analyzer": {
+          "filter": [
+            "nori_posfilter",
+            "nori_readingform",
+            "synonym_filtering",
+            "stop_filtering",
+            "shingle_filter"
+          ],
+          "tokenizer": "korean_nori_tokenizer",
+          "type": "custom"
+        }
+      },
+      "filter": {
+        "2_3_edgengram_filter": {
+          "max_gram": 3,
+          "min_gram": 2,
+          "type": "edge_ngram"
+        },
+        "2_4_ngram_filter": {
+          "max_gram": 4,
+          "min_gram": 2,
+          "type": "ngram"
+        },
+        "4_5_edgengram_filter": {
+          "max_ngram": 5,
+          "min_ngram": 4,
+          "type": "edge_ngram"
+        },
+        "edgengram_filter": {
+          "max_gram": 30,
+          "min_gram": 2,
+          "type": "edge_ngram"
+        },
+        "nori_posfilter": {
+          "stoptags": [
+            "E",
+            "IC",
+            "J",
+            "MAG",
+            "MAJ",
+            "MM",
+            "NA",
+            "SC",
+            "SE",
+            "SF",
+            "SN",
+            "SP",
+            "SSC",
+            "SSO",
+            "UNA",
+            "UNKNOWN",
+            "VA",
+            "VCP",
+            "VCN",
+            "VSV",
+            "VV",
+            "VX",
+            "XPN",
+            "XSA",
+            "XSN",
+            "XSV"
+          ],
+          "type": "nori_part_of_speech"
+        },
+        "shingle_filter": {
+          "max_shingle_size": 3,
+          "token_seperator": "",
+          "type": "shingle"
+        },
+        "stop_filtering": {
+          "stopwords_path": "stopwords.txt",
+          "type": "stop"
+        },
+        "synonym_filtering": {
+          "synonyms_path": "synonyms.txt",
+          "type": "synonym"
+        }
+      },
+      "tokenizer": {
+        "korean_nori_tokenizer": {
+          "decompound_mode": "discard",
+          "type": "nori_tokenizer",
+          "user_dictionary": "userdict_ko.txt"
+        }
+      }
+    },
+    "index": {
+      "max_ngram_diff": 3
+    },
+    "number_of_replicas": 1,
+    "number_of_shards": 2
+  },
+  "version": 20200620
+}

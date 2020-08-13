@@ -55,10 +55,10 @@ public class BroilerMainServiceImpl extends AbstractEtlService {
 
 		// 3. Check Response
 		String res = (EntityUtils.toString(response.getEntity()));
-		// JSONObject object = new JSONObject(res);
-		// log.debug("ES Result : {}", object.toString(2));
+		JSONObject object = new JSONObject(res);
+		log.debug("ES Result : {}", getSuccess(object));
 		
-		return res;
+		return bulkStr;
 	}
 
 }

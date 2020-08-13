@@ -6,6 +6,7 @@ import org.apache.http.util.EntityUtils;
 import org.elasticsearch.client.Request;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.RestClient;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
@@ -47,17 +48,17 @@ public class Breeding4GradingServiceImpl extends AbstractEtlService {
 		List<QueryMap> list = QueryFactory.toList(result);
 
 		// 2. Load to ES
-		Request req = new Request(method, endpoint);
 		String bulkStr = makeBulkParams(list, index_meta, field_name);
+		Request req = new Request(method, endpoint);
 		req.setJsonEntity(bulkStr);
 		Response response = restClient.performRequest(req);
 
 		// 3. Check Response
 		String res = (EntityUtils.toString(response.getEntity()));
-		// JSONObject object = new JSONObject(res);
-		// log.debug("ES Result : {}", object.toString(2));
+		JSONObject object = new JSONObject(res);
+		log.debug("ES Result : {}", getSuccess(object));
 		
-		return res;
+		return bulkStr;
 	}
 
 }

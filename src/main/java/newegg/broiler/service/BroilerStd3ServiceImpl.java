@@ -39,7 +39,7 @@ public class BroilerStd3ServiceImpl extends AbstractEtlService {
 
 		// Mandatory - ES Bulk 
 		String index_meta = "index_meta";
-		String field_name = "cj-chickenfarm-broiler-idx";
+		String field_name = "cj_std_info";
 		QueryMap queryMap = new QueryMap();
 
 		// 1. Extract&Transfer From RDB
@@ -55,10 +55,10 @@ public class BroilerStd3ServiceImpl extends AbstractEtlService {
 
 		// 3. Check Response
 		String res = (EntityUtils.toString(response.getEntity()));
-		// JSONObject object = new JSONObject(res);
-		// log.debug("ES Result : {}", object.toString(2));
+		JSONObject object = new JSONObject(res);
+		log.debug("ES Result : {}", getSuccess(object));
 		
-		return res;
+		return bulkStr;
 	}
 
 }

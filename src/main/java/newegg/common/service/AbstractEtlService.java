@@ -7,6 +7,7 @@ package newegg.common.service;
 import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -32,5 +33,20 @@ public abstract class AbstractEtlService implements EtlService {
 		}
 		return bulkStr.toString();
 	}
+	
+	public String getSuccess(JSONObject object) {
+		return String.valueOf(!((boolean)object.get("errors")));
+	}
+
+	public int countLines(String bigString) {
+        int count = 1;
+        int len_m1 = bigString.length() - 1;
+        for (int i = 1; i < len_m1; i++) {
+            if (bigString.charAt(i) == '\n') {
+                count++;
+            }
+        }
+        return count;
+    }
 
 }

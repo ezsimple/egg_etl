@@ -22,7 +22,7 @@ SELECT
 --  ,SUM(BL.TRANSFER_QTY) OVER(PARTITION BY BL.FARM_CODE, BL.PROJ_CODE ORDER BY BL.WORK_DATE) sales
   JSON_OBJECT(
      'update' VALUE JSON_OBJECT(
-        '_index' VALUE 'cj-chickenfarm-broiler-idx'
+        '_index' VALUE 'cj-chickenfarm-broiler-idx-'|| EXTRACT(YEAR FROM BL.WORK_DATE) 
        ,'_id' VALUE TO_CHAR(BL.WORK_DATE, 'YYYY-MM-DD') || 'broiler' || BL.FARM_CODE || BL.PROJ_CODE
      )
   ) INDEX_META

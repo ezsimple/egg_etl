@@ -16,7 +16,7 @@ SELECT
 --  SUM(EGP.TOTAL_EGG_QTY) OVER(PARTITION BY BR.FARM_CODE ,BR.FLOCK_ID, BR.HH_ID ORDER BY BR.WORK_DATE) AA,
    JSON_OBJECT(
      'update' VALUE JSON_OBJECT(
-        '_index' VALUE 'cj-chickenfarm-ps-idx'
+        '_index' VALUE 'cj-chickenfarm-ps-idx-'|| EXTRACT(YEAR FROM BR.WORK_DATE)
        ,'_id' VALUE TO_CHAR(BR.WORK_DATE, 'YYYY-MM-DD') || 'breeding' || BR.FARM_CODE || BR.FLOCK_ID || BR.HH_ID
        ,'retry_on_conflict' VALUE 10
      )

@@ -48,17 +48,17 @@ public class Breeding5SettingServiceImpl extends AbstractEtlService {
 		List<QueryMap> list = QueryFactory.toList(result);
 
 		// 2. Load to ES
-		Request req = new Request(method, endpoint);
 		String bulkStr = makeBulkParams(list, index_meta, field_name);
+		Request req = new Request(method, endpoint);
 		req.setJsonEntity(bulkStr);
 		Response response = restClient.performRequest(req);
 
 		// 3. Check Response
 		String res = (EntityUtils.toString(response.getEntity()));
-		// JSONObject object = new JSONObject(res);
-		// log.debug("ES Result : {}", object.toString(2));
+		JSONObject object = new JSONObject(res);
+		log.debug("ES Result : {}", getSuccess(object));
 		
-		return res;
+		return bulkStr;
 	}
 
 }

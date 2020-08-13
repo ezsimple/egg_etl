@@ -39,9 +39,6 @@ class HelloController {
 		
 		commandMap.debugParams();
 
-		String message = "{'message' : '안녕! 꼬꼬 ETL'}";
-		log.debug("{}", message);
-		
 		String ns = "newegg.hello.test";
 		String nsId = "selectFromDual";
 		QueryMap queryMap = new QueryMap();
@@ -49,40 +46,10 @@ class HelloController {
 		Object result = QueryFactory.execute(ns, nsId, queryMap);
 		result = QueryFactory.getResult(ns, nsId, result);
 		Map<String, Object> rts = QueryFactory.toMap(result);
+
+		log.debug("{}", rts);
 		
-		ns = "newegg.breeding.main";
-		nsId = "etlQuery";
-		result = QueryFactory.execute(ns, nsId, queryMap);
-		result = QueryFactory.getResult(ns, nsId, result);
-		List<QueryMap> list = QueryFactory.toList(result);
-		
-		StringBuffer bulkStr = new StringBuffer();
-		for(QueryMap item : list) {
-			String index = String.valueOf(item.get("index_meta"));
-			String field = String.valueOf(item.get("cj_chickienfarm_ps_idx"));
-			if(StringUtils.isEmpty(index)) continue;
-
-			bulkStr.append(index+"\n");
-			bulkStr.append(field+"\n");
-			// log.debug("{}", index);
-			// log.debug("{}", field);
-		}
-		// log.debug("{}",bulkStr.toString());
-
-        final String method = "POST";
-        final String endpoint = "_bulk";
-
-		Request req = new Request(method, endpoint);
-		req.setJsonEntity(bulkStr.toString());
-		Response response = restClient.performRequest(req);
-
-		String res = (EntityUtils.toString(response.getEntity()));
-
-		// JSONObject object = new JSONObject(res);
-		// log.debug("ES Result : {}", object.toString(2));
-		// String isOk = (boolean) object.get("errors") == false ? "success": "fail";
-
-		return res;
+		return rts;
 	}
 
 }

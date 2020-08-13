@@ -38,8 +38,8 @@ public class Snap2EggTransferServiceImpl extends AbstractEtlService {
 		String nsId = "etlQuery";
 
 		// Mandatory - ES Bulk 
-		String index_meta = "";
-		String field_name = "";
+		String index_meta = "index_meta";
+		String field_name = "cj_chickienfarm_snap_idx";
 		QueryMap queryMap = new QueryMap();
 
 		// 1. Extract&Transfer From RDB
@@ -55,10 +55,10 @@ public class Snap2EggTransferServiceImpl extends AbstractEtlService {
 
 		// 3. Check Response
 		String res = (EntityUtils.toString(response.getEntity()));
-		// JSONObject object = new JSONObject(res);
-		// log.debug("ES Result : {}", object.toString(2));
+		JSONObject object = new JSONObject(res);
+		log.debug("ES Result : {}", getSuccess(object));
 		
-		return res;
+		return bulkStr;
 	}
 
 }
